@@ -1,11 +1,11 @@
 // Global Store - contains server information, and user information
 import Vue from 'vue'
 import Vuex from 'vuex'
-import callJIRA from './CallJIRA'
+import CallJIRAc from './CallJIRA'
 
 const state = {
   state: 0, // 0 = CREATED, 1 = LOADING, 2 = LOADED, 3 = ERROR
-  tmp: {}
+  calljira: new CallJIRAc()
 }
 
 const mutations = {
@@ -17,9 +17,6 @@ const mutations = {
   },
   ERRORED_LOADING (state) {
     state.state = 3
-  },
-  TMP (state, v) {
-    state.tmp = v
   }
 }
 
@@ -30,11 +27,14 @@ const getters = {
     if (state.state === 2) return 'Loaded'
     if (state.state === 3) return 'Error'
     return 'Unknown'
+  },
+  calljira: (state, getters) => {
+    return state.calljira
   }
 }
 
 const actions = {
-  loadJIRAdata ({commit}) {
+  loadJIRAdata ({commit, state}) {
     commit('START_LOADING')
     var callBack = {
       OKcallback: {
@@ -45,12 +45,14 @@ const actions = {
       },
       FAILcallback: {
         method: function (retData, passback) {
+          console.log('Failed to load JIRA data')
+          console.log(retData)
           commit('ERRORED_LOADING')
         },
         params: {}
       }
     }
-    callJIRA.query('ABC', callBack)
+    state.calljira.query('ABC', callBack)
   }
 }
 

@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-class CallJIRAc {
+export default class CallJIRAc {
   constructor () {
     this.host = 'http://localhost:1337/jira.cc.ic.ac.uk'
     this.authkey = ''
@@ -41,6 +41,7 @@ class CallJIRAc {
         'Authorization': authkey
       }
     }
+    console.log(config)
     axios.get(
       this.host + URLPath,
       config
@@ -70,5 +71,3 @@ class CallJIRAc {
     this.callGetService('/rest/api/2/search?jql=project+%3D+SPI+AND+issuetype+%3D+Epic+ORDER+BY+KEY', callbackStructure)
   }
 }
-
-export default new CallJIRAc()

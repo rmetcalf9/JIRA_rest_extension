@@ -1,7 +1,7 @@
 // Global Store - contains server information, and user information
 import Vue from 'vue'
 import Vuex from 'vuex'
-import callJIRA from './CallJIRA'
+import callJIRAstore from './mainJIRADataStore'
 
 const state = {
   pageTitle: 'Default Page Title'
@@ -12,13 +12,13 @@ const mutations = {
     state.pageTitle = 'JIRA rest extenstions by RJM - ' + link
   },
   LOGOUT (state) {
-    callJIRA.clearAuthKey()
+    callJIRAstore.getters.calljira.clearAuthKey()
   }
 }
 
 const getters = {
   is_logged_in: (state, getters) => {
-    return callJIRA.isAuthKeySet()
+    return callJIRAstore.getters.calljira.isAuthKeySet()
   }
 }
 
@@ -26,10 +26,7 @@ const actions = {
   loginuser ({commit}, params) {
     // Need to call JIRA and ensure this is a valid user
     var authToken = btoa(params.username + ':' + params.password)
-    callJIRA.setAuthKey('Basic ' + authToken, params.callback)
-    // callJIRA.callGetService('/rest/api/2/mypermissions', params.callback)
-
-    // params.callback.FAILcallback.method({msg: 'Not Implemented'}, params.callback.FAILcallback.params)
+    callJIRAstore.getters.calljira.setAuthKey('Basic ' + authToken, params.callback)
   }
 }
 
