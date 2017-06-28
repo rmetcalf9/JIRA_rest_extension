@@ -22,18 +22,18 @@ $ quasar lint
 # Callback structure
 ```
 var callBack = {
-	OKcallback: {
-		method: function (retData, passback) {
-		  commit('COMPLETED_LOADING')
-		},
-		params: {}
-	},
-	FAILcallback: {
-		method: function (retData, passback) {
-		  commit('ERRORED_LOADING')
-		},
-		params: {}
-	}
+  OKcallback: {
+    method: function (retData, passback) {
+      commit('COMPLETED_LOADING')
+    },
+    params: {}
+  },
+  FAILcallback: {
+    method: function (retData, passback) {
+      commit('ERRORED_LOADING')
+    },
+    params: {}
+  }
 }
 ```
 Usage
@@ -41,3 +41,22 @@ Usage
 callBack.OKcallback.method(retData, callBack.OKcallback.params)
 callBack.FAILcallback.method(retData, callBack.FAILcallback.params)
 ```
+
+Pass through callBack
+```
+    var callbackPassthrough = {
+      OKcallback: {
+        method: function (retData, passback) {
+          passback.OKcallback.method(retData, passback.OKcallback.params)
+        },
+        params: callback
+      },
+      FAILcallback: {
+        method: function (retData, passback) {
+          passback.FAILcallback.method(retData, passback.FAILcallback.params)
+        },
+        params: callback
+      }
+    }
+```
+

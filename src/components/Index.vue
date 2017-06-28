@@ -25,6 +25,11 @@
       <div class="list no-border platform-delimiter">
         <q-drawer-link icon="home" :to="{path: '/', exact: true}">Home</q-drawer-link>
         <q-drawer-link icon="group_work" :to="{path: '/test', exact: true}">TEST</q-drawer-link>
+		<hr>
+        <q-drawer-link icon="exit_to_app" :to="{path: '/logout', exact: true}">
+          Logout
+        </q-drawer-link>
+		
       </div>
     </q-drawer>
     

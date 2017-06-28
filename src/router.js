@@ -13,6 +13,26 @@ function defaultBeforeNavFn (to, from, next, pageTitle) {
   next()
 }
 
+function requireAuth (to, from, next) {
+  var x = false
+  if (typeof (globalStore) !== 'undefined') {
+    if (typeof (globalStore.getters) !== 'undefined') {
+      x = globalStore.getters.is_logged_in
+    }
+  }
+  // console.log('Check auth')
+  // console.log(x)
+  if (!x) {
+    next({
+      path: '/login',
+      query: { redirect: to.fullPath }
+    })
+  }
+  else {
+    next()
+  }
+}
+
 export default new VueRouter({
   /*
    * NOTE! VueRouter "history" mode DOESN'T works for Cordova builds,
@@ -30,10 +50,18 @@ export default new VueRouter({
     {
       path: '/',
       component: load('Index'),
+      beforeEnter: requireAuth,
       children: [
         { path: '', component: load('Home'), beforeEnter (to, from, next) { defaultBeforeNavFn(to, from, next, 'Home') } },
         { path: 'test', component: load('Test'), beforeEnter (to, from, next) { defaultBeforeNavFn(to, from, next, 'Temp Test Page') } }
       ]
+    },
+    { path: '/login', component: load('Login'), beforeEnter (to, from, next) { defaultBeforeNavFn(to, from, next, 'Login') } },
+    { path: '/logout',
+      beforeEnter (to, from, next) {
+        globalStore.commit('LOGOUT')
+        next('/login')
+      }
     },
     { path: '*', component: load('Error404') } // Not found
   ]
