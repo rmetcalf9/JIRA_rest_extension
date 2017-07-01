@@ -4,7 +4,8 @@ import Vuex from 'vuex'
 import JIRAServiceCallStore from './JIRAServiceCallStore'
 
 const state = {
-  state: 0 // 0 = CREATED, 1 = LOADING, 2 = LOADED, 3 = ERROR
+  state: 0, // 0 = CREATED, 1 = LOADING, 2 = LOADED, 3 = ERROR
+  epics: []
 }
 
 const mutations = {
@@ -16,6 +17,24 @@ const mutations = {
   },
   ERRORED_LOADING (state) {
     state.state = 3
+  },
+  SAVE_EPICS (state, epics) {
+    state.epics = []
+    for (var epic in epics) {
+      var newUserStories = []
+      if (typeof (epics[epic].key) !== 'undefined') {
+        for (var userstory in epics[epic].user_stories) {
+          var newTasks = []
+          for (var task in epics[epic].user_stories[userstory].tasks) {
+            newTasks.push(epics[epic].user_stories[userstory].tasks[task])
+          }
+          epics[epic].user_stories[userstory].tasks = newTasks
+          newUserStories.push(epics[epic].user_stories[userstory])
+        }
+        epics[epic].user_stories = newUserStories
+        state.epics.push(epics[epic])
+      }
+    }
   }
 }
 
@@ -26,6 +45,9 @@ const getters = {
     if (state.state === 2) return 'Loaded'
     if (state.state === 3) return 'Error'
     return 'Unknown'
+  },
+  epics: (state, getters) => {
+    return state.epics
   }
 }
 
@@ -85,7 +107,8 @@ function addUserStories (commit, epics, callback) {
             summary: issues[i].fields.summary,
             description: issues[i].fields.description,
             epickey: epickey,
-            tasks: []
+            tasks: [],
+            label_text: issues[i].key + ' - ' + issues[i].fields.summary
           }
           epics[epickey].user_stories[issues[i].key] = userStory
           userStoryEpicMap[userStorykey] = epickey
@@ -109,7 +132,7 @@ function addTasks (commit, epics, userStoryEpicMap, callback) {
   var callback2 = {
     OKcallback: {
       method: function (issues, passback) {
-        console.log(issues)
+        // console.log(issues)
         for (var i = 0; i < issues.length; i++) {
           // ignoring epic in task, epic looked up based on user story
           for (var j = 0; j < issues[i].fields.customfield_11101.length; j++) {
@@ -121,11 +144,12 @@ function addTasks (commit, epics, userStoryEpicMap, callback) {
               summary: issues[i].fields.summary,
               description: issues[i].fields.description
             }
-            console.log(epicKey + ':' + userStoryKey)
+            // console.log(epicKey + ':' + userStoryKey)
             passback.callback.OKcallback.method({msg: 'OK'}, passback.callback.OKcallback.params)
           }
         }
-        console.log(epics)
+        // console.log(epics)
+        passback.commit('SAVE_EPICS', epics)
         passback.commit('COMPLETED_LOADING')
       },
       params: {commit: commit, callback: callback}
