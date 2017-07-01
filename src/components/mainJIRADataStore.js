@@ -5,7 +5,8 @@ import JIRAServiceCallStore from './JIRAServiceCallStore'
 
 const state = {
   state: 0, // 0 = CREATED, 1 = LOADING, 2 = LOADED, 3 = ERROR
-  epics: []
+  epics: [],
+  exceptions: []
 }
 
 const mutations = {
@@ -35,6 +36,9 @@ const mutations = {
         state.epics.push(epics[epic])
       }
     }
+  },
+  SAVE_EXCEPTIONS (state, exceptions) {
+    state.exceptions = exceptions
   }
 }
 
@@ -48,6 +52,9 @@ const getters = {
   },
   epics: (state, getters) => {
     return state.epics
+  },
+  exceptions: (state, getters) => {
+    return state.exceptions
   }
 }
 
@@ -59,6 +66,7 @@ const actions = {
         method: function (issues, passback) {
           console.log('START OF DATA STORE')
           var epics = []
+          var exceptions = []
           for (var i = 0; i < issues.length; i++) {
             epics[issues[i].key] = {
               id: issues[i].id,
@@ -69,7 +77,7 @@ const actions = {
           }
           // We have now collected all the epics
           // now query user stories
-          addUserStories(passback.commit, epics, passback.callback)
+          addUserStories(passback.commit, epics, passback.callback, exceptions)
         },
         params: {commit: commit, callback: params.callback}
       },
@@ -90,13 +98,15 @@ function loadDataErrorFn (retData, passback) {
   console.log('Failed to load JIRA data')
   console.log(retData)
   passback.commit('ERRORED_LOADING')
-  passback.callBack.FAILcallback.method(retData, passback.callBack.FAILcallback.params)
+  passback.callback.FAILcallback.method(retData, passback.callback.FAILcallback.params)
 }
 
-function addUserStories (commit, epics, callback) {
+function addUserStories (commit, epics, callback, exceptions) {
   var callback2 = {
     OKcallback: {
       method: function (issues, passback) {
+        // console.log('User story query response')
+        // console.log(issues)
         var userStoryEpicMap = []
         for (var i = 0; i < issues.length; i++) {
           var epickey = issues[i].fields.customfield_10800
@@ -108,18 +118,19 @@ function addUserStories (commit, epics, callback) {
             description: issues[i].fields.description,
             epickey: epickey,
             tasks: [],
-            label_text: issues[i].key + ' - ' + issues[i].fields.summary
+            status: issues[i].fields.status.name,
+            label_text: issues[i].key + ' (' + issues[i].fields.status.name + ') - ' + issues[i].fields.summary
           }
           epics[epickey].user_stories[issues[i].key] = userStory
           userStoryEpicMap[userStorykey] = epickey
         }
-        addTasks(passback.commit, epics, userStoryEpicMap, passback.callback)
+        addTasks(passback.commit, epics, userStoryEpicMap, passback.callback, passback.exceptions)
       },
-      params: {commit: commit, callback: callback}
+      params: {commit: commit, callback: callback, exceptions: exceptions}
     },
     FAILcallback: {
       method: loadDataErrorFn,
-      params: {commit: commit, callback: callback}
+      params: {commit: commit, callback: callback, exceptions: exceptions}
     }
   }
   JIRAServiceCallStore.dispatch('query', {
@@ -128,35 +139,56 @@ function addUserStories (commit, epics, callback) {
   })
 }
 
-function addTasks (commit, epics, userStoryEpicMap, callback) {
+function addException (exceptions, key, msg) {
+  exceptions.push({
+    key: key,
+    msg: msg
+  })
+  return exceptions
+}
+
+function addTasks (commit, epics, userStoryEpicMap, callback, exceptions) {
   var callback2 = {
     OKcallback: {
       method: function (issues, passback) {
-        // console.log(issues)
+        console.log('Task query response')
+        console.log(issues)
         for (var i = 0; i < issues.length; i++) {
           // ignoring epic in task, epic looked up based on user story
-          for (var j = 0; j < issues[i].fields.customfield_11101.length; j++) {
-            var userStoryKey = issues[i].fields.customfield_11101[j]
-            var epicKey = userStoryEpicMap[userStoryKey]
-            epics[epicKey].user_stories[userStoryKey].tasks[issues[i].key] = {
-              id: issues[i].id,
-              key: issues[i].key,
-              summary: issues[i].fields.summary,
-              description: issues[i].fields.description
-            }
+          if ((typeof (issues[i].fields.customfield_11101) === 'undefined') || (issues[i].fields.customfield_11101 === null)) {
+            passback.exceptions = addException(passback.exceptions, issues[i].key, 'Task without userstorykey set')
+          }
+          else {
+            for (var j = 0; j < issues[i].fields.customfield_11101.length; j++) {
+              var userStoryKey = issues[i].fields.customfield_11101[j]
+              if (typeof (userStoryKey) === 'undefined') {
+                passback.exceptions = addException(passback.exceptions, issues[i].key, 'Task without invalid userstorykey set')
+              }
+              else {
+                var epicKey = userStoryEpicMap[userStoryKey]
+                passback.epics[epicKey].user_stories[userStoryKey].tasks[issues[i].key] = {
+                  id: issues[i].id,
+                  key: issues[i].key,
+                  summary: issues[i].fields.summary,
+                  description: issues[i].fields.description,
+                  status: issues[i].fields.status.name
+                }
+              }
+            } // if custom field
             // console.log(epicKey + ':' + userStoryKey)
             passback.callback.OKcallback.method({msg: 'OK'}, passback.callback.OKcallback.params)
           }
         }
         // console.log(epics)
-        passback.commit('SAVE_EPICS', epics)
+        passback.commit('SAVE_EPICS', passback.epics)
+        passback.commit('SAVE_EXCEPTIONS', passback.exceptions)
         passback.commit('COMPLETED_LOADING')
       },
-      params: {commit: commit, callback: callback}
+      params: {commit: commit, callback: callback, epics: epics, exceptions: exceptions}
     },
     FAILcallback: {
       method: loadDataErrorFn,
-      params: {commit: commit, callback: callback}
+      params: {commit: commit, callback: callback, epics: epics, exceptions: exceptions}
     }
   }
   JIRAServiceCallStore.dispatch('query', {
