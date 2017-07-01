@@ -21,7 +21,7 @@ $ quasar lint
 
 # Callback structure
 ```
-var callBack = {
+var callback = {
   OKcallback: {
     method: function (retData, passback) {
       commit('COMPLETED_LOADING')

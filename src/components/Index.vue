@@ -12,7 +12,12 @@
       <q-toolbar-title :padding="1">
         {{ pageTitle }}
       </q-toolbar-title>
-    </div>
+
+      <button @click="refresh">
+        Refresh
+      </button>
+
+	  </div>
 
     <!-- Drawer -->
     <q-drawer ref="drawer">
@@ -47,6 +52,7 @@
 // import strings from './strings'
 import globalStore from './globalStore'
 import mainJIRADataStore from './mainJIRADataStore'
+import { Loading, Toast } from 'quasar'
 
 export default {
   data () {
@@ -74,7 +80,44 @@ export default {
     }
   },
   created () {
-    mainJIRADataStore.dispatch('loadJIRAdata')
+    Loading.show()
+    var callback = {
+      OKcallback: {
+        method: function (retData, passback) {
+          Loading.hide()
+        },
+        params: {}
+      },
+      FAILcallback: {
+        method: function (retData, passback) {
+          Loading.hide()
+          Toast.create('Failed to log in "' + retData.msg + '"')
+        },
+        params: {}
+      }
+    }
+    mainJIRADataStore.dispatch('loadJIRAdata', {callback: callback})
+  },
+  methods: {
+    refresh () {
+      Loading.show()
+      var callback = {
+        OKcallback: {
+          method: function (retData, passback) {
+            Loading.hide()
+          },
+          params: {}
+        },
+        FAILcallback: {
+          method: function (retData, passback) {
+            Loading.hide()
+            Toast.create('Failed to log in "' + retData.msg + '"')
+          },
+          params: {}
+        }
+      }
+      mainJIRADataStore.dispatch('loadJIRAdata', {callback: callback})
+    }
   }
 }
 

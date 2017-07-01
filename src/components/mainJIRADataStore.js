@@ -30,7 +30,7 @@ const getters = {
 }
 
 const actions = {
-  loadJIRAdata ({commit, state}) {
+  loadJIRAdata ({commit, state}, params) {
     commit('START_LOADING')
     var callback = {
       OKcallback: {
@@ -47,13 +47,13 @@ const actions = {
           }
           // We have now collected all the epics
           // now query user stories
-          addUserStories(passback.commit, epics)
+          addUserStories(passback.commit, epics, passback.callback)
         },
-        params: {commit: commit}
+        params: {commit: commit, callback: params.callback}
       },
       FAILcallback: {
         method: loadDataErrorFn,
-        params: {commit: commit}
+        params: {commit: commit, callback: params.callback}
       }
     }
     JIRAServiceCallStore.dispatch('query', {
@@ -68,10 +68,11 @@ function loadDataErrorFn (retData, passback) {
   console.log('Failed to load JIRA data')
   console.log(retData)
   passback.commit('ERRORED_LOADING')
+  passback.callBack.FAILcallback.method(retData, passback.callBack.FAILcallback.params)
 }
 
-function addUserStories (commit, epics) {
-  var callback = {
+function addUserStories (commit, epics, callback) {
+  var callback2 = {
     OKcallback: {
       method: function (issues, passback) {
         var userStoryEpicMap = []
@@ -89,23 +90,23 @@ function addUserStories (commit, epics) {
           epics[epickey].user_stories[issues[i].key] = userStory
           userStoryEpicMap[userStorykey] = epickey
         }
-        addTasks(passback.commit, epics, userStoryEpicMap)
+        addTasks(passback.commit, epics, userStoryEpicMap, passback.callback)
       },
-      params: {commit: commit}
+      params: {commit: commit, callback: callback}
     },
     FAILcallback: {
       method: loadDataErrorFn,
-      params: {commit: commit}
+      params: {commit: commit, callback: callback}
     }
   }
   JIRAServiceCallStore.dispatch('query', {
     jql: 'project+%3D+SPI+AND+issuetype+%3D+Story+ORDER+BY+KEY',
-    callback: callback
+    callback: callback2
   })
 }
 
-function addTasks (commit, epics, userStoryEpicMap) {
-  var callback = {
+function addTasks (commit, epics, userStoryEpicMap, callback) {
+  var callback2 = {
     OKcallback: {
       method: function (issues, passback) {
         console.log(issues)
@@ -121,21 +122,22 @@ function addTasks (commit, epics, userStoryEpicMap) {
               description: issues[i].fields.description
             }
             console.log(epicKey + ':' + userStoryKey)
+            passback.callback.OKcallback.method({msg: 'OK'}, passback.callback.OKcallback.params)
           }
         }
         console.log(epics)
         passback.commit('COMPLETED_LOADING')
       },
-      params: {commit: commit}
+      params: {commit: commit, callback: callback}
     },
     FAILcallback: {
       method: loadDataErrorFn,
-      params: {commit: commit}
+      params: {commit: commit, callback: callback}
     }
   }
   JIRAServiceCallStore.dispatch('query', {
     jql: 'project+%3D+SPI+AND+issuetype+%3D+Task+ORDER+BY+KEY',
-    callback: callback
+    callback: callback2
   })
 }
 
