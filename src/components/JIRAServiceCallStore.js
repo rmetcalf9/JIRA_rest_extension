@@ -47,10 +47,29 @@ const actions = {
     callGetServiceINTERNAL(state, params.URLPath, params.callback, state.authkey)
   },
   query ({dispatch}, params) {
-    // todo use patams.jql
+    var callbackPassthrough = {
+      OKcallback: {
+        method: function (retData, passback) {
+          // console.log('Query Resp')
+          // console.log(retData.data.maxResults)
+          // console.log(retData.data.startAt)
+          // console.log(retData.data.total)
+          // console.log(retData.data.issues)
+          console.log('TODO de-paginate query result')
+          passback.OKcallback.method(retData.data.issues, passback.OKcallback.params)
+        },
+        params: params.callback
+      },
+      FAILcallback: {
+        method: function (retData, passback) {
+          passback.FAILcallback.method(retData, passback.FAILcallback.params)
+        },
+        params: params.callback
+      }
+    }
     dispatch('callGetService', {
       URLPath: '/rest/api/2/search?jql=' + params.jql,
-      callback: params.callback
+      callback: callbackPassthrough
     })
   }
 }
