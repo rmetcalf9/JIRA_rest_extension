@@ -1,11 +1,10 @@
 // Global Store - contains server information, and user information
 import Vue from 'vue'
 import Vuex from 'vuex'
-import CallJIRAc from './CallJIRA'
+import JIRAServiceCallStore from './JIRAServiceCallStore'
 
 const state = {
-  state: 0, // 0 = CREATED, 1 = LOADING, 2 = LOADED, 3 = ERROR
-  calljira: new CallJIRAc()
+  state: 0 // 0 = CREATED, 1 = LOADING, 2 = LOADED, 3 = ERROR
 }
 
 const mutations = {
@@ -27,16 +26,13 @@ const getters = {
     if (state.state === 2) return 'Loaded'
     if (state.state === 3) return 'Error'
     return 'Unknown'
-  },
-  calljira: (state, getters) => {
-    return state.calljira
   }
 }
 
 const actions = {
   loadJIRAdata ({commit, state}) {
     commit('START_LOADING')
-    var callBack = {
+    var callback = {
       OKcallback: {
         method: function (retData, passback) {
           commit('COMPLETED_LOADING')
@@ -52,7 +48,11 @@ const actions = {
         params: {}
       }
     }
-    state.calljira.query('ABC', callBack)
+    JIRAServiceCallStore.dispatch('query', {
+      jql: 'project+%3D+SPI+AND+issuetype+%3D+Epic+ORDER+BY+KEY',
+      callback: callback
+    })
+    // state.calljira.query('ABC', callback)
   }
 }
 
