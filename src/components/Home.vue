@@ -10,17 +10,19 @@
       <div class="list">
         <div v-for="userStory in epic.user_stories" :key="userStory.key">
           <q-collapsible icon="group" :label="userStory.label_text">
-            <div class="item" v-for="task in userStory.tasks" :key="task.key" v-if="task.status !== 'Done'">
+            <div class="item has-secondary" v-for="task in userStory.tasks" :key="task.key" v-if="task.status !== 'Done'">
               <i class="item-primary">check_box_outline_blank</i>
               <div class="item-content">
                 {{ task.key }} ({{ task.status }}) - {{ task.summary }}
               </div>
-            </div>
-            <div class="item" v-for="task in userStory.tasks" :key="task.key" v-if="task.status === 'Done'">
+              <div class="item-secondary">{{ task.story_points }}</div>
+            </div> 
+            <div class="item has-secondary" v-for="task in userStory.tasks" :key="task.key" v-if="task.status === 'Done'">
               <i class="item-primary">check_box</i>
               <div class="item-content">
                 {{ task.key }} ({{ task.status }}) - {{ task.summary }}
               </div>
+              <div class="item-secondary text-italic" style="text-decoration: line-through;">{{ task.story_points }}</div>
             </div>
           </q-collapsible>
         </div>

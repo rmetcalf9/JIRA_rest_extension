@@ -171,7 +171,8 @@ function addTasks (commit, epics, userStoryEpicMap, callback, exceptions) {
                   key: issues[i].key,
                   summary: issues[i].fields.summary,
                   description: issues[i].fields.description,
-                  status: issues[i].fields.status.name
+                  status: issues[i].fields.status.name,
+                  story_points: issues[i].fields.customfield_10004
                 }
               }
             } // if custom field
