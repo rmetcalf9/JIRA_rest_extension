@@ -24,14 +24,53 @@ const mutations = {
     for (var epic in epics) {
       var newUserStories = []
       if (typeof (epics[epic].key) !== 'undefined') {
+        var epicSummedTaskStoryPoints = 0
+        var epicSummedTaskBurnedStoryPoints = 0
         for (var userstory in epics[epic].user_stories) {
+          var us = epics[epic].user_stories[userstory]
           var newTasks = []
+          var progress = us.story_points
+          var summedTaskStoryPoints = 0
+          var summedTaskBurnedStoryPoints = 0
+          var numTasks = 0
           for (var task in epics[epic].user_stories[userstory].tasks) {
+            numTasks++
+            if (summedTaskStoryPoints !== null) {
+              if (epics[epic].user_stories[userstory].tasks[task].story_points === null) {
+                summedTaskStoryPoints = null
+              }
+              else {
+                if (epics[epic].user_stories[userstory].tasks[task].status === 'Done') summedTaskBurnedStoryPoints += epics[epic].user_stories[userstory].tasks[task].story_points
+                summedTaskStoryPoints += epics[epic].user_stories[userstory].tasks[task].story_points
+              }
+            }
             newTasks.push(epics[epic].user_stories[userstory].tasks[task])
           }
+          if (numTasks === 0) {
+            summedTaskStoryPoints = null
+            epics[epic].user_stories[userstory].summedStoryPoints = us.story_points
+            epics[epic].user_stories[userstory].summedBurnedStoryPoints = 0
+          }
+          else {
+            epics[epic].user_stories[userstory].summedStoryPoints = summedTaskStoryPoints
+            epics[epic].user_stories[userstory].summedBurnedStoryPoints = summedTaskBurnedStoryPoints
+          }
           epics[epic].user_stories[userstory].tasks = newTasks
+          if (summedTaskStoryPoints !== null) {
+            progress = summedTaskBurnedStoryPoints + '/' + summedTaskStoryPoints + ' '
+            progress += Math.round((summedTaskBurnedStoryPoints * 100) / summedTaskStoryPoints)
+            progress += '%'
+          }
+          // var progress = '0/0 100%'
+          epics[epic].user_stories[userstory].label_text = progress + ' - ' + us.key + ' (' + us.status + ') ' + us.summary
+
+          epicSummedTaskStoryPoints += summedTaskStoryPoints
+          epicSummedTaskBurnedStoryPoints += summedTaskBurnedStoryPoints
+
           newUserStories.push(epics[epic].user_stories[userstory])
         }
+        epics[epic].summedStoryPoints = epicSummedTaskStoryPoints
+        epics[epic].summedBurnedStoryPoints = epicSummedTaskBurnedStoryPoints
         epics[epic].user_stories = newUserStories
         state.epics.push(epics[epic])
       }
@@ -72,7 +111,9 @@ const actions = {
               id: issues[i].id,
               key: issues[i].key,
               name: issues[i].fields.customfield_10801,
-              user_stories: []
+              user_stories: [],
+              summedStoryPoints: 0,
+              summedBurnedStoryPoints: 0
             }
           }
           // We have now collected all the epics
@@ -111,6 +152,13 @@ function addUserStories (commit, epics, callback, exceptions) {
         for (var i = 0; i < issues.length; i++) {
           var epickey = issues[i].fields.customfield_10800
           var userStorykey = issues[i].key
+          var storyPoints = 0
+          if (issues[i].fields.customfield_10004 == null) {
+            passback.exceptions = addException(passback.exceptions, issues[i].key, 'User Story without estimate')
+          }
+          else {
+            storyPoints = issues[i].fields.customfield_10004
+          }
           var userStory = {
             id: issues[i].id,
             key: userStorykey,
@@ -119,7 +167,10 @@ function addUserStories (commit, epics, callback, exceptions) {
             epickey: epickey,
             tasks: [],
             status: issues[i].fields.status.name,
-            label_text: issues[i].key + ' (' + issues[i].fields.status.name + ') - ' + issues[i].fields.summary
+            label_text: 'FILLED IN LATER',
+            story_points: storyPoints,
+            summedStoryPoints: 0,
+            summedBurnedStoryPoints: 0
           }
           epics[epickey].user_stories[issues[i].key] = userStory
           userStoryEpicMap[userStorykey] = epickey
@@ -151,8 +202,8 @@ function addTasks (commit, epics, userStoryEpicMap, callback, exceptions) {
   var callback2 = {
     OKcallback: {
       method: function (issues, passback) {
-        console.log('Task query response')
-        console.log(issues)
+        // console.log('Task query response')
+        // console.log(issues)
         for (var i = 0; i < issues.length; i++) {
           // ignoring epic in task, epic looked up based on user story
           if ((typeof (issues[i].fields.customfield_11101) === 'undefined') || (issues[i].fields.customfield_11101 === null)) {

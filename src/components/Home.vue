@@ -1,11 +1,14 @@
 <template>
   <div>
   
-	<h2>Project information page</h2>
+	<h2>Project Progress</h2>
 	<br>
 	<div class="card" v-for="(epic, key) in epics" :key="epic.key">
-	<div class="card-title bg-primary text-white">
-	  {{ epic.name }}
+	<div class="card-title bg-primary text-white" v-if="epic.summedStoryPoints !== 0">
+	  {{Math.round((epic.summedBurnedStoryPoints * 100)/epic.summedStoryPoints) }}% -  {{ epic.name }}
+	</div>
+	<div class="card-title bg-primary text-white" v-if="epic.summedStoryPoints === 0">
+	  0% -  {{ epic.name }}
 	</div>
       <div class="list">
         <div v-for="userStory in epic.user_stories" :key="userStory.key">
