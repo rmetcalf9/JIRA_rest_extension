@@ -1,7 +1,7 @@
 <template>
   <div>
   
-	<h2>Project Progress</h2>
+	<h2>Project Progress - {{ project.progressPercantage }}%</h2>
 	<br>
 	<div class="card" v-for="(epic, key) in epics" :key="epic.key">
 	<div class="card-title bg-primary text-white" v-if="epic.summedStoryPoints !== 0">
@@ -44,6 +44,9 @@ export default {
   computed: {
     epics () {
       return mainJIRADataStore.getters.epics
+    },
+    project () {
+      return mainJIRADataStore.getters.project
     }
   }
 }

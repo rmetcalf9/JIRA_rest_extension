@@ -6,7 +6,10 @@ import JIRAServiceCallStore from './JIRAServiceCallStore'
 const state = {
   state: 0, // 0 = CREATED, 1 = LOADING, 2 = LOADED, 3 = ERROR
   epics: [],
-  exceptions: []
+  exceptions: [],
+  project: {
+    progressPercantage: 0
+  }
 }
 
 const mutations = {
@@ -21,6 +24,8 @@ const mutations = {
   },
   SAVE_EPICS (state, epics) {
     state.epics = []
+    var projectSummedTaskStoryPoints = 0
+    var projectSummedTaskBurnedStoryPoints = 0
     for (var epic in epics) {
       var newUserStories = []
       if (typeof (epics[epic].key) !== 'undefined') {
@@ -73,7 +78,11 @@ const mutations = {
         epics[epic].summedBurnedStoryPoints = epicSummedTaskBurnedStoryPoints
         epics[epic].user_stories = newUserStories
         state.epics.push(epics[epic])
+
+        projectSummedTaskStoryPoints += epicSummedTaskStoryPoints
+        projectSummedTaskBurnedStoryPoints += epicSummedTaskBurnedStoryPoints
       }
+      state.project.progressPercantage = Math.round((100 * projectSummedTaskBurnedStoryPoints) / projectSummedTaskStoryPoints)
     }
   },
   SAVE_EXCEPTIONS (state, exceptions) {
@@ -94,6 +103,9 @@ const getters = {
   },
   exceptions: (state, getters) => {
     return state.exceptions
+  },
+  project: (state, getters) => {
+    return state.project
   }
 }
 
