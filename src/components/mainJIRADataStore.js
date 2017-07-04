@@ -22,8 +22,9 @@ const mutations = {
   ERRORED_LOADING (state) {
     state.state = 3
   },
-  SAVE_EPICS (state, epics) {
+  SAVE_EPICS (state, params) {
     state.epics = []
+    var epics = params.epics
     var projectSummedTaskStoryPoints = 0
     var projectSummedTaskBurnedStoryPoints = 0
     for (var epic in epics) {
@@ -38,8 +39,10 @@ const mutations = {
           var summedTaskStoryPoints = 0
           var summedTaskBurnedStoryPoints = 0
           var numTasks = 0
+          var numEstimatedTasks = 0
           for (var task in epics[epic].user_stories[userstory].tasks) {
             numTasks++
+            if (epics[epic].user_stories[userstory].tasks[task].story_points !== null) numEstimatedTasks++
             if (summedTaskStoryPoints !== null) {
               if (epics[epic].user_stories[userstory].tasks[task].story_points === null) {
                 summedTaskStoryPoints = null
@@ -50,6 +53,9 @@ const mutations = {
               }
             }
             newTasks.push(epics[epic].user_stories[userstory].tasks[task])
+          }
+          if (numEstimatedTasks !== numTasks) {
+            params.exceptions = addException(params.exceptions, epics[epic].user_stories[userstory].key, 'Epic with some but not all Tasks estimated')
           }
           if (numTasks === 0) {
             summedTaskStoryPoints = null
@@ -96,10 +102,8 @@ const mutations = {
       else {
         state.project.progressPercantage = Math.round((100 * projectSummedTaskBurnedStoryPoints) / projectSummedTaskStoryPoints)
       }
+      state.exceptions = params.exceptions
     }
-  },
-  SAVE_EXCEPTIONS (state, exceptions) {
-    state.exceptions = exceptions
   }
 }
 
@@ -257,8 +261,7 @@ function addTasks (commit, epics, userStoryEpicMap, callback, exceptions) {
           }
         }
         // console.log(epics)
-        passback.commit('SAVE_EPICS', passback.epics)
-        passback.commit('SAVE_EXCEPTIONS', passback.exceptions)
+        passback.commit('SAVE_EPICS', {epics: passback.epics, exceptions: passback.exceptions})
         passback.commit('COMPLETED_LOADING')
 
         passback.callback.OKcallback.method({msg: 'OK'}, passback.callback.OKcallback.params)
