@@ -30,7 +30,7 @@
           </q-collapsible>
         </div>
       </div> 
-    </div> 
+    </div>
 	</div>
 </template>
 

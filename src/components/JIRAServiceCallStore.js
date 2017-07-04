@@ -106,7 +106,18 @@ function callGetServiceINTERNAL (state, URLPath, callback, authkey) {
     }
   })
   .catch(function (response) {
-    callback.FAILcallback.method({msg: 'Bad Response ' + response.response.status, response: response.response}, callback.FAILcallback.params)
+    if (typeof (response.response) === 'undefined') {
+      if (typeof (response.message) === 'undefined') {
+        callback.FAILcallback.method({msg: 'Bad Response UNKNOWN', response: response}, callback.FAILcallback.params)
+      }
+      else {
+        console.log(response)
+        callback.FAILcallback.method({msg: 'Bad Response ' + response.message, response: response}, callback.FAILcallback.params)
+      }
+    }
+    else {
+      callback.FAILcallback.method({msg: 'Bad Response ' + response.response.status, response: response.response}, callback.FAILcallback.params)
+    }
   })
 }
 

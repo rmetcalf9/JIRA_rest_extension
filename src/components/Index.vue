@@ -111,7 +111,7 @@ export default {
         FAILcallback: {
           method: function (retData, passback) {
             Loading.hide()
-            Toast.create('Failed to log in "' + retData.msg + '"')
+            Toast.create('Failed to get data "' + retData.msg + '"')
           },
           params: {}
         }

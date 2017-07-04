@@ -62,9 +62,11 @@ const mutations = {
           }
           epics[epic].user_stories[userstory].tasks = newTasks
           if (summedTaskStoryPoints !== null) {
-            progress = summedTaskBurnedStoryPoints + '/' + summedTaskStoryPoints + ' '
-            progress += Math.round((summedTaskBurnedStoryPoints * 100) / summedTaskStoryPoints)
-            progress += '%'
+            if (summedTaskStoryPoints !== 0) {
+              progress = summedTaskBurnedStoryPoints + '/' + summedTaskStoryPoints + ' '
+              progress += Math.round((summedTaskBurnedStoryPoints * 100) / summedTaskStoryPoints)
+              progress += '%'
+            }
           }
           // var progress = '0/0 100%'
           epics[epic].user_stories[userstory].label_text = progress + ' - ' + us.key + ' (' + us.status + ') ' + us.summary
@@ -82,7 +84,12 @@ const mutations = {
         projectSummedTaskStoryPoints += epicSummedTaskStoryPoints
         projectSummedTaskBurnedStoryPoints += epicSummedTaskBurnedStoryPoints
       }
-      state.project.progressPercantage = Math.round((100 * projectSummedTaskBurnedStoryPoints) / projectSummedTaskStoryPoints)
+      if (projectSummedTaskStoryPoints === 0) {
+        state.project.progressPercantage = 0
+      }
+      else {
+        state.project.progressPercantage = Math.round((100 * projectSummedTaskBurnedStoryPoints) / projectSummedTaskStoryPoints)
+      }
     }
   },
   SAVE_EXCEPTIONS (state, exceptions) {
@@ -240,13 +247,14 @@ function addTasks (commit, epics, userStoryEpicMap, callback, exceptions) {
               }
             } // if custom field
             // console.log(epicKey + ':' + userStoryKey)
-            passback.callback.OKcallback.method({msg: 'OK'}, passback.callback.OKcallback.params)
           }
         }
         // console.log(epics)
         passback.commit('SAVE_EPICS', passback.epics)
         passback.commit('SAVE_EXCEPTIONS', passback.exceptions)
         passback.commit('COMPLETED_LOADING')
+
+        passback.callback.OKcallback.method({msg: 'OK'}, passback.callback.OKcallback.params)
       },
       params: {commit: commit, callback: callback, epics: epics, exceptions: exceptions}
     },

@@ -38,7 +38,6 @@ export default {
   },
   methods: {
     login () {
-      console.log('Login Script')
       Loading.show()
       var callback = {
         OKcallback: {
