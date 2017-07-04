@@ -59,6 +59,12 @@ const mutations = {
           else {
             epics[epic].user_stories[userstory].summedStoryPoints = summedTaskStoryPoints
             epics[epic].user_stories[userstory].summedBurnedStoryPoints = summedTaskBurnedStoryPoints
+
+            newTasks = newTasks.sort(function (ak, bk) {
+              if (ak.rank === bk.rank) return 0
+              if (ak.rank < bk.rank) return -1
+              return 1
+            })
           }
           epics[epic].user_stories[userstory].tasks = newTasks
           if (summedTaskStoryPoints !== null) {
@@ -221,8 +227,8 @@ function addTasks (commit, epics, userStoryEpicMap, callback, exceptions) {
   var callback2 = {
     OKcallback: {
       method: function (issues, passback) {
-        // console.log('Task query response')
-        // console.log(issues)
+        console.log('Task query response')
+        console.log(issues)
         for (var i = 0; i < issues.length; i++) {
           // ignoring epic in task, epic looked up based on user story
           if ((typeof (issues[i].fields.customfield_11101) === 'undefined') || (issues[i].fields.customfield_11101 === null)) {
@@ -242,7 +248,8 @@ function addTasks (commit, epics, userStoryEpicMap, callback, exceptions) {
                   summary: issues[i].fields.summary,
                   description: issues[i].fields.description,
                   status: issues[i].fields.status.name,
-                  story_points: issues[i].fields.customfield_10004
+                  story_points: issues[i].fields.customfield_10004,
+                  rank: issues[i].fields.customfield_11000
                 }
               }
             } // if custom field
