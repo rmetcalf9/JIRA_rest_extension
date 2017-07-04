@@ -24,18 +24,20 @@ const getters = {
 
 const actions = {
   setAuthKey ({commit, state}, params) {
-    var authKey = 'Basic ' + params.authToken
+    var authKey = params.authToken
     var callbackPassthrough = {
       OKcallback: {
         method: function (retData, passback) {
+          // console.log('setAuthKey got OKPassback')
           // TODO Determine if this log in is acceptable
-          passback.callback.OKcallback.method(retData, passback.callback.OKcallback.params)
           passback.commit('SETAUTHKEY', passback.authkey)
+          passback.callback.OKcallback.method(retData, passback.callback.OKcallback.params)
         },
         params: {callback: params.callback, authkey: authKey, commit: commit}
       },
       FAILcallback: {
         method: function (retData, passback) {
+          // console.log('setAuthKey got FAILPassback')
           passback.FAILcallback.method(retData, passback.FAILcallback.params)
         },
         params: params.callback
@@ -89,6 +91,8 @@ function callGetServiceINTERNAL (state, URLPath, callback, authkey) {
     state.host + URLPath,
     config
   ).then(function (response) {
+    // console.log('callGetServiceINTERNAL response')
+    // console.log(response)
     if (response.status < 200) {
       callback.FAILcallback.method({msg: 'Bad status', response: response}, callback.FAILcallback.params)
     }
@@ -102,7 +106,7 @@ function callGetServiceINTERNAL (state, URLPath, callback, authkey) {
     }
   })
   .catch(function (response) {
-    callback.FAILcallback.method({msg: 'TODO ERROR', response: response}, callback.FAILcallback.params)
+    callback.FAILcallback.method({msg: 'Bad Response ' + response.response.status, response: response.response}, callback.FAILcallback.params)
   })
 }
 

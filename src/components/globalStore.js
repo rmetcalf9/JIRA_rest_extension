@@ -27,7 +27,7 @@ const actions = {
   loginuser ({commit}, params) {
     // Need to call JIRA and ensure this is a valid user
     var authToken = btoa(params.username + ':' + params.password)
-    JIRAServiceCallStore.dispatch('setAuthKey', {authToken: authToken, callback: params.callback})
+    JIRAServiceCallStore.dispatch('setAuthKey', {authToken: 'Basic ' + authToken, callback: params.callback})
     //  callJIRAstore.getters.calljira.setAuthKey('Basic ' + authToken, params.callback)
   }
 }
