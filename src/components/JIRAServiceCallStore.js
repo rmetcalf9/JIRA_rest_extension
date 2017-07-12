@@ -3,7 +3,7 @@ import Vuex from 'vuex'
 import axios from 'axios'
 
 const state = {
-  host: 'http://localhost:1337/jira.cc.ic.ac.uk',
+  host: 'http://cc-rjmetcal.ic.ac.uk:1337/jira.cc.ic.ac.uk',
   authkey: ''
 }
 
