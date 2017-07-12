@@ -28,11 +28,13 @@ const mutations = {
     var projectSummedTaskStoryPoints = 0
     var projectSummedTaskBurnedStoryPoints = 0
     for (var epic in epics) {
+      var numUserStoriesInThisEpic = 0
       var newUserStories = []
       if (typeof (epics[epic].key) !== 'undefined') {
         var epicSummedTaskStoryPoints = 0
         var epicSummedTaskBurnedStoryPoints = 0
         for (var userstory in epics[epic].user_stories) {
+          numUserStoriesInThisEpic++
           var us = epics[epic].user_stories[userstory]
           var newTasks = []
           var progress = us.story_points
@@ -90,6 +92,15 @@ const mutations = {
         }
         epics[epic].summedStoryPoints = epicSummedTaskStoryPoints
         epics[epic].summedBurnedStoryPoints = epicSummedTaskBurnedStoryPoints
+
+        if (numUserStoriesInThisEpic > 1) {
+          newUserStories = newUserStories.sort(function (ak, bk) {
+            if (ak.rank === bk.rank) return 0
+            if (ak.rank < bk.rank) return -1
+            return 1
+          })
+        }
+
         epics[epic].user_stories = newUserStories
         state.epics.push(epics[epic])
 
@@ -104,6 +115,13 @@ const mutations = {
       }
       state.exceptions = params.exceptions
     }
+
+    // Sort the epics by JIRA rank
+    state.epics = state.epics.sort(function (ak, bk) {
+      if (ak.rank === bk.rank) return 0
+      if (ak.rank < bk.rank) return -1
+      return 1
+    })
   }
 }
 
@@ -142,7 +160,8 @@ const actions = {
               name: issues[i].fields.customfield_10801,
               user_stories: [],
               summedStoryPoints: 0,
-              summedBurnedStoryPoints: 0
+              summedBurnedStoryPoints: 0,
+              rank: issues[i].fields.customfield_11000
             }
           }
           // We have now collected all the epics
@@ -199,7 +218,8 @@ function addUserStories (commit, epics, callback, exceptions) {
             label_text: 'FILLED IN LATER',
             story_points: storyPoints,
             summedStoryPoints: 0,
-            summedBurnedStoryPoints: 0
+            summedBurnedStoryPoints: 0,
+            rank: issues[i].fields.customfield_11000
           }
           epics[epickey].user_stories[issues[i].key] = userStory
           userStoryEpicMap[userStorykey] = epickey
