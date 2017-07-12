@@ -3,6 +3,7 @@
 > A Quasar project
 
 ## Host
+Not working due to SSL issues
 https://rmetcalf9.github.io/JIRA_rest_extension/index.html
 
 
