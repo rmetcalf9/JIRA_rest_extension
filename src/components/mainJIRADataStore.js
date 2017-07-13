@@ -99,13 +99,12 @@ const mutations = {
             if (ak.rank < bk.rank) return -1
             return 1
           })
+          epics[epic].user_stories = newUserStories
+          state.epics.push(epics[epic])
+
+          projectSummedTaskStoryPoints += epicSummedTaskStoryPoints
+          projectSummedTaskBurnedStoryPoints += epicSummedTaskBurnedStoryPoints
         }
-
-        epics[epic].user_stories = newUserStories
-        state.epics.push(epics[epic])
-
-        projectSummedTaskStoryPoints += epicSummedTaskStoryPoints
-        projectSummedTaskBurnedStoryPoints += epicSummedTaskBurnedStoryPoints
       }
       if (projectSummedTaskStoryPoints === 0) {
         state.project.progressPercantage = 0
@@ -199,30 +198,35 @@ function addUserStories (commit, epics, callback, exceptions) {
         var userStoryEpicMap = []
         for (var i = 0; i < issues.length; i++) {
           var epickey = issues[i].fields.customfield_10800
-          var userStorykey = issues[i].key
-          var storyPoints = 0
-          if (issues[i].fields.customfield_10004 == null) {
-            passback.exceptions = addException(passback.exceptions, issues[i].key, 'User Story without estimate')
+          if (typeof (epickey) !== 'string') {
+            passback.exceptions = addException(passback.exceptions, issues[i].key, 'User story with no Epic set')
           }
           else {
-            storyPoints = issues[i].fields.customfield_10004
+            var userStorykey = issues[i].key
+            var storyPoints = 0
+            if (issues[i].fields.customfield_10004 == null) {
+              passback.exceptions = addException(passback.exceptions, issues[i].key, 'User Story without estimate')
+            }
+            else {
+              storyPoints = issues[i].fields.customfield_10004
+            }
+            var userStory = {
+              id: issues[i].id,
+              key: userStorykey,
+              summary: issues[i].fields.summary,
+              description: issues[i].fields.description,
+              epickey: epickey,
+              tasks: [],
+              status: issues[i].fields.status.name,
+              label_text: 'FILLED IN LATER',
+              story_points: storyPoints,
+              summedStoryPoints: 0,
+              summedBurnedStoryPoints: 0,
+              rank: issues[i].fields.customfield_11000
+            }
+            epics[epickey].user_stories[issues[i].key] = userStory
+            userStoryEpicMap[userStorykey] = epickey
           }
-          var userStory = {
-            id: issues[i].id,
-            key: userStorykey,
-            summary: issues[i].fields.summary,
-            description: issues[i].fields.description,
-            epickey: epickey,
-            tasks: [],
-            status: issues[i].fields.status.name,
-            label_text: 'FILLED IN LATER',
-            story_points: storyPoints,
-            summedStoryPoints: 0,
-            summedBurnedStoryPoints: 0,
-            rank: issues[i].fields.customfield_11000
-          }
-          epics[epickey].user_stories[issues[i].key] = userStory
-          userStoryEpicMap[userStorykey] = epickey
         }
         addTasks(passback.commit, epics, userStoryEpicMap, passback.callback, passback.exceptions)
       },
