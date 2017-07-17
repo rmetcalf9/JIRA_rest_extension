@@ -49,31 +49,40 @@ const actions = {
     callGetServiceINTERNAL(state, params.URLPath, params.callback, state.authkey)
   },
   query ({dispatch}, params) {
-    var callbackPassthrough = {
-      OKcallback: {
-        method: function (retData, passback) {
-          // console.log('Query Resp')
-          // console.log(retData.data.maxResults)
-          // console.log(retData.data.startAt)
-          // console.log(retData.data.total)
-          // console.log(retData.data.issues)
-          console.log('TODO de-paginate query result')
-          passback.OKcallback.method(retData.data.issues, passback.OKcallback.params)
-        },
-        params: params.callback
-      },
-      FAILcallback: {
-        method: function (retData, passback) {
-          passback.FAILcallback.method(retData, passback.FAILcallback.params)
-        },
-        params: params.callback
-      }
-    }
-    dispatch('callGetService', {
-      URLPath: '/rest/api/2/search?jql=' + params.jql,
-      callback: callbackPassthrough
-    })
+    queryWithDePage(dispatch, params, [])
   }
+}
+
+function queryWithDePage (dispatch, params, issuesSoFar) {
+  var callbackPassthrough = {
+    OKcallback: {
+      method: function (retData, passback) {
+        // console.log('Query Resp')
+        // console.log(retData.data.maxResults)
+        // console.log(retData.data.startAt)
+        // console.log(retData.data.total)
+        // console.log(retData.data.issues)
+        if (retData.data.total > (retData.data.startAt + retData.data.maxResults)) {
+          queryWithDePage(dispatch, params, issuesSoFar.concat(retData.data.issues))
+          // passback.FAILcallback.method({ msg: 'TODO de-paginate query result' }, passback.FAILcallback.params)
+        }
+        else {
+          passback.OKcallback.method(issuesSoFar.concat(retData.data.issues), passback.OKcallback.params)
+        }
+      },
+      params: params.callback
+    },
+    FAILcallback: {
+      method: function (retData, passback) {
+        passback.FAILcallback.method(retData, passback.FAILcallback.params)
+      },
+      params: params.callback
+    }
+  }
+  dispatch('callGetService', {
+    URLPath: '/rest/api/2/search?jql=' + params.jql + '&maxResults=100&startAt=' + issuesSoFar.length,
+    callback: callbackPassthrough
+  })
 }
 
 // This function will not use the internal state in the authkey. This is so it
