@@ -54,6 +54,7 @@ export default new VueRouter({
       children: [
         { path: '', component: load('Home'), beforeEnter (to, from, next) { defaultBeforeNavFn(to, from, next, 'Home') } },
         { path: 'exceptions', component: load('Exceptions'), beforeEnter (to, from, next) { defaultBeforeNavFn(to, from, next, 'Project Exceptions') } },
+        { path: 'progress', component: load('Progress'), beforeEnter (to, from, next) { defaultBeforeNavFn(to, from, next, 'Project Progress') } },
         { path: 'test', component: load('Test'), beforeEnter (to, from, next) { defaultBeforeNavFn(to, from, next, 'Temp Test Page') } }
       ]
     },

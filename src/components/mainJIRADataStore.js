@@ -8,7 +8,10 @@ const state = {
   epics: [],
   exceptions: [],
   project: {
-    progressPercantage: 0
+    progressPercantage: 0,
+    numUserStories: 0,
+    numPoints: 0,
+    numBurnedPoints: 0
   }
 }
 
@@ -27,6 +30,7 @@ const mutations = {
     var epics = params.epics
     var projectSummedTaskStoryPoints = 0
     var projectSummedTaskBurnedStoryPoints = 0
+    var numUserStoriesInThisProject = 0
     for (var epic in epics) {
       var numUserStoriesInThisEpic = 0
       var newUserStories = []
@@ -88,8 +92,8 @@ const mutations = {
           // var progress = '0/0 100%'
           epics[epic].user_stories[userstory].label_text = progress + ' - ' + us.key + ' (' + us.status + ') ' + us.summary
 
-          epicSummedTaskStoryPoints += summedTaskStoryPoints
-          epicSummedTaskBurnedStoryPoints += summedTaskBurnedStoryPoints
+          epicSummedTaskStoryPoints += epics[epic].user_stories[userstory].summedStoryPoints
+          epicSummedTaskBurnedStoryPoints += epics[epic].user_stories[userstory].summedBurnedStoryPoints
 
           newUserStories.push(epics[epic].user_stories[userstory])
         }
@@ -109,14 +113,18 @@ const mutations = {
         projectSummedTaskStoryPoints += epicSummedTaskStoryPoints
         projectSummedTaskBurnedStoryPoints += epicSummedTaskBurnedStoryPoints
       }
-      if (projectSummedTaskStoryPoints === 0) {
-        state.project.progressPercantage = 0
-      }
-      else {
-        state.project.progressPercantage = Math.round((100 * projectSummedTaskBurnedStoryPoints) / projectSummedTaskStoryPoints)
-      }
-      state.exceptions = params.exceptions
+      numUserStoriesInThisProject += numUserStoriesInThisEpic
     }
+    if (projectSummedTaskStoryPoints === 0) {
+      state.project.progressPercantage = 0
+    }
+    else {
+      state.project.progressPercantage = Math.round((100 * projectSummedTaskBurnedStoryPoints) / projectSummedTaskStoryPoints)
+    }
+    state.project.numUserStories = numUserStoriesInThisProject
+    state.project.numPoints = projectSummedTaskStoryPoints
+    state.project.numBurnedPoints = projectSummedTaskBurnedStoryPoints
+    state.exceptions = params.exceptions
 
     // Sort the epics by JIRA rank
     state.epics = state.epics.sort(function (ak, bk) {
@@ -152,8 +160,8 @@ const actions = {
     var callback = {
       OKcallback: {
         method: function (issues, passback) {
-          console.log('Epic query sesponses')
-          console.log(issues)
+          // console.log('Epic query sesponses')
+          // console.log(issues)
           var epics = []
           var exceptions = []
           for (var i = 0; i < issues.length; i++) {
