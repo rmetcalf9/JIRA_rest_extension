@@ -30,7 +30,10 @@ const mutations = {
     for (var epic in epics) {
       var numUserStoriesInThisEpic = 0
       var newUserStories = []
-      if (typeof (epics[epic].key) !== 'undefined') {
+      if (typeof (epics[epic].key) === 'undefined') {
+        console.log('ERROR Epic with Undefined key')
+      }
+      else {
         var epicSummedTaskStoryPoints = 0
         var epicSummedTaskBurnedStoryPoints = 0
         for (var userstory in epics[epic].user_stories) {
@@ -99,12 +102,12 @@ const mutations = {
             if (ak.rank < bk.rank) return -1
             return 1
           })
-          epics[epic].user_stories = newUserStories
-          state.epics.push(epics[epic])
-
-          projectSummedTaskStoryPoints += epicSummedTaskStoryPoints
-          projectSummedTaskBurnedStoryPoints += epicSummedTaskBurnedStoryPoints
         }
+        epics[epic].user_stories = newUserStories
+        state.epics.push(epics[epic])
+
+        projectSummedTaskStoryPoints += epicSummedTaskStoryPoints
+        projectSummedTaskBurnedStoryPoints += epicSummedTaskBurnedStoryPoints
       }
       if (projectSummedTaskStoryPoints === 0) {
         state.project.progressPercantage = 0
@@ -149,7 +152,8 @@ const actions = {
     var callback = {
       OKcallback: {
         method: function (issues, passback) {
-          console.log('START OF DATA STORE')
+          console.log('Epic query sesponses')
+          console.log(issues)
           var epics = []
           var exceptions = []
           for (var i = 0; i < issues.length; i++) {
@@ -255,8 +259,8 @@ function addTasks (commit, epics, userStoryEpicMap, callback, exceptions) {
   var callback2 = {
     OKcallback: {
       method: function (issues, passback) {
-        console.log('Task query response')
-        console.log(issues)
+        // console.log('Task query response')
+        // console.log(issues)
         for (var i = 0; i < issues.length; i++) {
           // ignoring epic in task, epic looked up based on user story
           if ((typeof (issues[i].fields.customfield_11101) === 'undefined') || (issues[i].fields.customfield_11101 === null)) {
