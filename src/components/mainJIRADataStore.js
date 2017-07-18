@@ -234,7 +234,8 @@ function addUserStories (commit, epics, callback, exceptions) {
               story_points: storyPoints,
               summedStoryPoints: 0,
               summedBurnedStoryPoints: 0,
-              rank: issues[i].fields.customfield_11000
+              rank: issues[i].fields.customfield_11000,
+              sprintid: getSprintID(issues[i].fields.customfield_10501, issues[i].key, passback.exceptions)
             }
             epics[epickey].user_stories[issues[i].key] = userStory
             userStoryEpicMap[userStorykey] = epickey
@@ -267,8 +268,8 @@ function addTasks (commit, epics, userStoryEpicMap, callback, exceptions) {
   var callback2 = {
     OKcallback: {
       method: function (issues, passback) {
-        // console.log('Task query response')
-        // console.log(issues)
+        console.log('Task query response')
+        console.log(issues)
         for (var i = 0; i < issues.length; i++) {
           // ignoring epic in task, epic looked up based on user story
           if ((typeof (issues[i].fields.customfield_11101) === 'undefined') || (issues[i].fields.customfield_11101 === null)) {
@@ -289,7 +290,8 @@ function addTasks (commit, epics, userStoryEpicMap, callback, exceptions) {
                   description: issues[i].fields.description,
                   status: issues[i].fields.status.name,
                   story_points: issues[i].fields.customfield_10004,
-                  rank: issues[i].fields.customfield_11000
+                  rank: issues[i].fields.customfield_11000,
+                  sprintid: getSprintID(issues[i].fields.customfield_10501, issues[i].key, passback.exceptions)
                 }
               }
             } // if custom field
@@ -313,6 +315,21 @@ function addTasks (commit, epics, userStoryEpicMap, callback, exceptions) {
     jql: 'project+%3D+SPI+AND+issuetype+%3D+Task+ORDER+BY+KEY',
     callback: callback2
   })
+}
+
+function getSprintID (sprintField, issueKey, exceptions) {
+  if (sprintField === null) return null
+  if (sprintField.length === 0) return null
+  if (sprintField.length !== 1) {
+    exceptions = addException(exceptions, issueKey, 'Issue in more than one sprint')
+    return null
+  }
+  // sprintField is something like com.atlassian.greenhopper.service.sprint.Sprint@22edc5f4[id=86,rapidViewId=89,state=ACTIVE,name=Simp Task Sprint 1,startDate=2017-07-18T15:54:08.499+01:00,endDate=2017-07-25T15:54:00.000+01:00,completeDate=<null>,sequence=86]
+  // extract the ID
+
+  var tmp = sprintField[0].substr(sprintField[0].search('\\[id=') + 4, 6)
+  // should get is tmp='86,ra'
+  return tmp.substring(0, tmp.search(','))
 }
 
 Vue.use(Vuex)

@@ -2,6 +2,8 @@ import Vue from 'vue'
 import Vuex from 'vuex'
 import axios from 'axios'
 
+// JIRA API Doc: https://docs.atlassian.com/jira/REST/server/#api/2/search-search
+
 const state = {
   host: 'http://cc-rjmetcal.ic.ac.uk:1337/jira.cc.ic.ac.uk',
   authkey: ''
