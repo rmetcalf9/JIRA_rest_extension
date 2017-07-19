@@ -64,7 +64,7 @@ const mutations = {
             newTasks.push(epics[epic].user_stories[userstory].tasks[task])
           }
           if (numEstimatedTasks !== numTasks) {
-            params.exceptions = addException(params.exceptions, epics[epic].user_stories[userstory].key, 'Epic with some but not all Tasks estimated')
+            params.exceptions = addException(params.exceptions, epics[epic].user_stories[userstory].key, 'Story with some but not all Tasks estimated')
           }
           if (numTasks === 0) {
             summedTaskStoryPoints = null
@@ -72,7 +72,12 @@ const mutations = {
             epics[epic].user_stories[userstory].summedBurnedStoryPoints = 0
           }
           else {
+            // user story with tasks.
+            // we must use the summedTaskStoryPoints or us.story_points which ever is greater
             epics[epic].user_stories[userstory].summedStoryPoints = summedTaskStoryPoints
+            if (us.story_points > summedTaskStoryPoints) {
+              epics[epic].user_stories[userstory].summedStoryPoints = us.story_points
+            }
             epics[epic].user_stories[userstory].summedBurnedStoryPoints = summedTaskBurnedStoryPoints
 
             newTasks = newTasks.sort(function (ak, bk) {
@@ -81,6 +86,14 @@ const mutations = {
               return 1
             })
           }
+
+          // Add an exception for this userstory if it is in a sprint and it's story points don't match summed story points
+          if (us.sprintid !== null) {
+            if (summedTaskStoryPoints !== us.story_points) {
+              params.exceptions = addException(params.exceptions, epics[epic].user_stories[userstory].key, 'Story in sprint but estimate (' + us.story_points + ') dosen\'t match sum of task story points (' + summedTaskStoryPoints + ')')
+            }
+          }
+
           epics[epic].user_stories[userstory].tasks = newTasks
           if (summedTaskStoryPoints !== null) {
             if (summedTaskStoryPoints !== 0) {
