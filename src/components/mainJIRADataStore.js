@@ -139,6 +139,7 @@ const mutations = {
     state.project.numPoints = projectSummedTaskStoryPoints
     state.project.numBurnedPoints = projectSummedTaskBurnedStoryPoints
     state.exceptions = params.forGlobalState.exceptions
+    state.project.sprints = params.forGlobalState.sprints
 
     // Sort the epics by JIRA rank
     state.epics = state.epics.sort(function (ak, bk) {
@@ -179,7 +180,7 @@ const actions = {
           var forGlobalState = {
             epics: [],
             exceptions: [],
-            sprints: []
+            sprints: {}
           }
           for (var i = 0; i < issues.length; i++) {
             forGlobalState.epics[issues[i].key] = {
@@ -252,7 +253,7 @@ function addUserStories (commit, forGlobalState, callback) {
               summedStoryPoints: 0,
               summedBurnedStoryPoints: 0,
               rank: issues[i].fields.customfield_11000,
-              sprintid: getSprintID(issues[i].fields.customfield_10501, issues[i].key, passback.forGlobalState.exceptions)
+              sprintid: getSprintID(issues[i].fields.customfield_10501, issues[i].key, passback.forGlobalState)
             }
             passback.forGlobalState.epics[epickey].user_stories[issues[i].key] = userStory
             userStoryEpicMap[userStorykey] = epickey
@@ -285,8 +286,8 @@ function addTasks (commit, userStoryEpicMap, callback, forGlobalState) {
   var callback2 = {
     OKcallback: {
       method: function (issues, passback) {
-        console.log('Task query response')
-        console.log(issues)
+        // console.log('Task query response')
+        // console.log(issues)
         for (var i = 0; i < issues.length; i++) {
           // ignoring epic in task, epic looked up based on user story
           if ((typeof (issues[i].fields.customfield_11101) === 'undefined') || (issues[i].fields.customfield_11101 === null)) {
@@ -308,7 +309,7 @@ function addTasks (commit, userStoryEpicMap, callback, forGlobalState) {
                   status: issues[i].fields.status.name,
                   story_points: issues[i].fields.customfield_10004,
                   rank: issues[i].fields.customfield_11000,
-                  sprintid: getSprintID(issues[i].fields.customfield_10501, issues[i].key, passback.forGlobalState.exceptions)
+                  sprintid: getSprintID(issues[i].fields.customfield_10501, issues[i].key, passback.forGlobalState)
                 }
               }
             } // if custom field
@@ -333,19 +334,60 @@ function addTasks (commit, userStoryEpicMap, callback, forGlobalState) {
   })
 }
 
-function getSprintID (sprintField, issueKey, exceptions) {
+function getSprintID (sprintField, issueKey, forGlobalState) {
   if (sprintField === null) return null
   if (sprintField.length === 0) return null
   if (sprintField.length !== 1) {
-    exceptions = addException(exceptions, issueKey, 'Issue in more than one sprint')
+    forGlobalState.exceptions = addException(forGlobalState.exceptions, issueKey, 'Issue in more than one sprint')
     return null
   }
   // sprintField is something like com.atlassian.greenhopper.service.sprint.Sprint@22edc5f4[id=86,rapidViewId=89,state=ACTIVE,name=Simp Task Sprint 1,startDate=2017-07-18T15:54:08.499+01:00,endDate=2017-07-25T15:54:00.000+01:00,completeDate=<null>,sequence=86]
   // extract the ID
 
-  var tmp = sprintField[0].substr(sprintField[0].search('\\[id=') + 4, 6)
-  // should get is tmp='86,ra'
-  return tmp.substring(0, tmp.search(','))
+  var fieldListStart = sprintField[0].search('\\[id=')
+  var fieldList = sprintField[0].substr(fieldListStart + 1, sprintField[0].length - (fieldListStart + 2)).split(',')
+  fieldList = fieldList.map(function (x) {
+    var pair = x.split('=')
+    return {
+      name: pair[0],
+      value: pair[1]
+    }
+  })
+
+  var gv = function (value) {
+    var ret = null
+    fieldList.forEach(function (x) {
+      if (x.name === value) {
+        ret = x.value
+      }
+    })
+    return ret
+  }
+
+  // should get is fieldList='86,ra'
+  var sprintID = gv('id') // fieldList.substring(0, fieldList.search(','))
+
+  sprintID = parseInt(sprintID)
+
+  // console.log('SPID=')
+  // console.log(sprintID)
+  // console.log(forGlobalState.sprints[sprintID])
+
+  if (typeof (forGlobalState.sprints[sprintID]) === 'undefined') {
+    forGlobalState.sprints[sprintID] = {
+      id: sprintID,
+      name: gv('name'),
+      state: gv('state'),
+      start: gv('startDate'),
+      end: gv('endDate'),
+      complete: gv('completeDate'),
+      sequence: gv('sequence')
+    }
+    // console.log(forGlobalState.sprints)
+    // console.log(forGlobalState.sprints.length)
+  }
+
+  return sprintID
 }
 
 Vue.use(Vuex)

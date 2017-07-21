@@ -5,6 +5,8 @@
   {{ epics }}
   <h3>Exceptions</h3>
   {{ exceptions }}
+  <h3>Sprints</h3>
+  {{ sprints }}
   </div>
 </template>
 
@@ -28,6 +30,9 @@ export default {
     },
     exceptions () {
       return mainJIRADataStore.getters.exceptions
+    },
+    sprints () {
+      return mainJIRADataStore.getters.project.sprints
     }
   }
 }
