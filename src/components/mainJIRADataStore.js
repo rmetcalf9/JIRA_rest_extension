@@ -135,6 +135,8 @@ const mutations = {
     else {
       state.project.progressPercantage = Math.round((100 * projectSummedTaskBurnedStoryPoints) / projectSummedTaskStoryPoints)
     }
+    raiseSprintExecptions(params.forGlobalState.exceptions, params.forGlobalState.sprints)
+
     state.project.numUserStories = numUserStoriesInThisProject
     state.project.numPoints = projectSummedTaskStoryPoints
     state.project.numBurnedPoints = projectSummedTaskBurnedStoryPoints
@@ -148,6 +150,23 @@ const mutations = {
       return 1
     })
   }
+}
+
+function raiseSprintExecptions (exceptions, sprints) {
+  console.log(sprints)
+  Object.keys(sprints).map(function (objectKey, index) {
+    var x = sprints[objectKey]
+    if (x.hasTasks) {
+      if (x.hasStories) {
+        exceptions = addException(exceptions, 'Sprint ' + x.id, 'Sprint has both tasks and stories')
+      }
+    }
+    if (!x.hasTasks) {
+      if (!x.hasStories) {
+        exceptions = addException(exceptions, 'Sprint ' + x.id, 'Sprint has neither tasks nor stories')
+      }
+    }
+  })
 }
 
 const getters = {
@@ -253,7 +272,7 @@ function addUserStories (commit, forGlobalState, callback) {
               summedStoryPoints: 0,
               summedBurnedStoryPoints: 0,
               rank: issues[i].fields.customfield_11000,
-              sprintid: getSprintID(issues[i].fields.customfield_10501, issues[i].key, passback.forGlobalState)
+              sprintid: getSprintID(issues[i].fields.customfield_10501, issues[i].key, passback.forGlobalState, 'Story')
             }
             passback.forGlobalState.epics[epickey].user_stories[issues[i].key] = userStory
             userStoryEpicMap[userStorykey] = epickey
@@ -309,7 +328,7 @@ function addTasks (commit, userStoryEpicMap, callback, forGlobalState) {
                   status: issues[i].fields.status.name,
                   story_points: issues[i].fields.customfield_10004,
                   rank: issues[i].fields.customfield_11000,
-                  sprintid: getSprintID(issues[i].fields.customfield_10501, issues[i].key, passback.forGlobalState)
+                  sprintid: getSprintID(issues[i].fields.customfield_10501, issues[i].key, passback.forGlobalState, 'Task')
                 }
               }
             } // if custom field
@@ -334,7 +353,8 @@ function addTasks (commit, userStoryEpicMap, callback, forGlobalState) {
   })
 }
 
-function getSprintID (sprintField, issueKey, forGlobalState) {
+// source can either be 'Task' or 'Story'
+function getSprintID (sprintField, issueKey, forGlobalState, source) {
   if (sprintField === null) return null
   if (sprintField.length === 0) return null
   if (sprintField.length !== 1) {
@@ -381,10 +401,19 @@ function getSprintID (sprintField, issueKey, forGlobalState) {
       start: gv('startDate'),
       end: gv('endDate'),
       complete: gv('completeDate'),
-      sequence: gv('sequence')
+      sequence: gv('sequence'),
+      hasTasks: false,
+      hasStories: false
     }
     // console.log(forGlobalState.sprints)
     // console.log(forGlobalState.sprints.length)
+  }
+
+  if (source === 'Task') {
+    forGlobalState.sprints[sprintID].hasTasks = true
+  }
+  else if (source === 'Story') {
+    forGlobalState.sprints[sprintID].hasStories = true
   }
 
   return sprintID
