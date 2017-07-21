@@ -15,8 +15,8 @@
 					<td data-th="Epic" class="text-left">{{ epic.key }} - {{ epic.name }}</td>
 					<td data-th="Stories" class="text-right">{{ epic.user_stories.length }}</td>
 					<td data-th="Points" class="text-right">{{ epic.summedBurnedStoryPoints }}/{{ epic.summedStoryPoints }}</td>
-					<td data-th="Points" class="text-right" v-if="epic.summedStoryPoints !== 0">{{ 100 * (epic.summedBurnedStoryPoints / epic.summedStoryPoints) }}%</td>
-					<td data-th="Points" class="text-right" v-if="epic.summedStoryPoints == 0">0%</td>
+					<td data-th="Progress" class="text-right" v-if="epic.summedStoryPoints !== 0">{{ Math.round(100 * (epic.summedBurnedStoryPoints / epic.summedStoryPoints)) }}%</td>
+					<td data-th="Progress" class="text-right" v-if="epic.summedStoryPoints == 0">0%</td>
 				</tr>
 			</tbody>
 			<thead>
