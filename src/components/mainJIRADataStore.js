@@ -11,7 +11,8 @@ const state = {
     progressPercantage: 0,
     numUserStories: 0,
     numPoints: 0,
-    numBurnedPoints: 0
+    numBurnedPoints: 0,
+    sprints: []
   }
 }
 
@@ -27,7 +28,7 @@ const mutations = {
   },
   SAVE_EPICS (state, params) {
     state.epics = []
-    var epics = params.epics
+    var epics = params.forGlobalState.epics
     var projectSummedTaskStoryPoints = 0
     var projectSummedTaskBurnedStoryPoints = 0
     var numUserStoriesInThisProject = 0
@@ -64,7 +65,7 @@ const mutations = {
             newTasks.push(epics[epic].user_stories[userstory].tasks[task])
           }
           if (numEstimatedTasks !== numTasks) {
-            params.exceptions = addException(params.exceptions, epics[epic].user_stories[userstory].key, 'Story with some but not all Tasks estimated')
+            params.forGlobalState.exceptions = addException(params.forGlobalState.exceptions, epics[epic].user_stories[userstory].key, 'Story with some but not all Tasks estimated')
           }
           if (numTasks === 0) {
             summedTaskStoryPoints = null
@@ -90,7 +91,7 @@ const mutations = {
           // Add an exception for this userstory if it is in a sprint and it's story points don't match summed story points
           if (us.sprintid !== null) {
             if (summedTaskStoryPoints !== us.story_points) {
-              params.exceptions = addException(params.exceptions, epics[epic].user_stories[userstory].key, 'Story in sprint but estimate (' + us.story_points + ') dosen\'t match sum of task story points (' + summedTaskStoryPoints + ')')
+              params.forGlobalState.exceptions = addException(params.forGlobalState.exceptions, epics[epic].user_stories[userstory].key, 'Story in sprint but estimate (' + us.story_points + ') dosen\'t match sum of task story points (' + summedTaskStoryPoints + ')')
             }
           }
 
@@ -137,7 +138,7 @@ const mutations = {
     state.project.numUserStories = numUserStoriesInThisProject
     state.project.numPoints = projectSummedTaskStoryPoints
     state.project.numBurnedPoints = projectSummedTaskBurnedStoryPoints
-    state.exceptions = params.exceptions
+    state.exceptions = params.forGlobalState.exceptions
 
     // Sort the epics by JIRA rank
     state.epics = state.epics.sort(function (ak, bk) {
@@ -175,10 +176,13 @@ const actions = {
         method: function (issues, passback) {
           // console.log('Epic query sesponses')
           // console.log(issues)
-          var epics = []
-          var exceptions = []
+          var forGlobalState = {
+            epics: [],
+            exceptions: [],
+            sprints: []
+          }
           for (var i = 0; i < issues.length; i++) {
-            epics[issues[i].key] = {
+            forGlobalState.epics[issues[i].key] = {
               id: issues[i].id,
               key: issues[i].key,
               name: issues[i].fields.customfield_10801,
@@ -190,7 +194,7 @@ const actions = {
           }
           // We have now collected all the epics
           // now query user stories
-          addUserStories(passback.commit, epics, passback.callback, exceptions)
+          addUserStories(passback.commit, forGlobalState, passback.callback)
         },
         params: {commit: commit, callback: params.callback}
       },
@@ -214,7 +218,7 @@ function loadDataErrorFn (retData, passback) {
   passback.callback.FAILcallback.method(retData, passback.callback.FAILcallback.params)
 }
 
-function addUserStories (commit, epics, callback, exceptions) {
+function addUserStories (commit, forGlobalState, callback) {
   var callback2 = {
     OKcallback: {
       method: function (issues, passback) {
@@ -224,13 +228,13 @@ function addUserStories (commit, epics, callback, exceptions) {
         for (var i = 0; i < issues.length; i++) {
           var epickey = issues[i].fields.customfield_10800
           if (typeof (epickey) !== 'string') {
-            passback.exceptions = addException(passback.exceptions, issues[i].key, 'User story with no Epic set')
+            passback.forGlobalState.exceptions = addException(passback.forGlobalState.exceptions, issues[i].key, 'User story with no Epic set')
           }
           else {
             var userStorykey = issues[i].key
             var storyPoints = 0
             if (issues[i].fields.customfield_10004 == null) {
-              passback.exceptions = addException(passback.exceptions, issues[i].key, 'User Story without estimate')
+              passback.forGlobalState.exceptions = addException(passback.forGlobalState.exceptions, issues[i].key, 'User Story without estimate')
             }
             else {
               storyPoints = issues[i].fields.customfield_10004
@@ -248,19 +252,19 @@ function addUserStories (commit, epics, callback, exceptions) {
               summedStoryPoints: 0,
               summedBurnedStoryPoints: 0,
               rank: issues[i].fields.customfield_11000,
-              sprintid: getSprintID(issues[i].fields.customfield_10501, issues[i].key, passback.exceptions)
+              sprintid: getSprintID(issues[i].fields.customfield_10501, issues[i].key, passback.forGlobalState.exceptions)
             }
-            epics[epickey].user_stories[issues[i].key] = userStory
+            passback.forGlobalState.epics[epickey].user_stories[issues[i].key] = userStory
             userStoryEpicMap[userStorykey] = epickey
           }
         }
-        addTasks(passback.commit, epics, userStoryEpicMap, passback.callback, passback.exceptions)
+        addTasks(passback.commit, userStoryEpicMap, passback.callback, passback.forGlobalState)
       },
-      params: {commit: commit, callback: callback, exceptions: exceptions}
+      params: {commit: commit, callback: callback, forGlobalState: forGlobalState}
     },
     FAILcallback: {
       method: loadDataErrorFn,
-      params: {commit: commit, callback: callback, exceptions: exceptions}
+      params: {commit: commit, callback: callback}
     }
   }
   JIRAServiceCallStore.dispatch('query', {
@@ -277,7 +281,7 @@ function addException (exceptions, key, msg) {
   return exceptions
 }
 
-function addTasks (commit, epics, userStoryEpicMap, callback, exceptions) {
+function addTasks (commit, userStoryEpicMap, callback, forGlobalState) {
   var callback2 = {
     OKcallback: {
       method: function (issues, passback) {
@@ -286,17 +290,17 @@ function addTasks (commit, epics, userStoryEpicMap, callback, exceptions) {
         for (var i = 0; i < issues.length; i++) {
           // ignoring epic in task, epic looked up based on user story
           if ((typeof (issues[i].fields.customfield_11101) === 'undefined') || (issues[i].fields.customfield_11101 === null)) {
-            passback.exceptions = addException(passback.exceptions, issues[i].key, 'Task without userstorykey set')
+            passback.forGlobalState.exceptions = addException(passback.forGlobalState.exceptions, issues[i].key, 'Task without userstorykey set')
           }
           else {
             for (var j = 0; j < issues[i].fields.customfield_11101.length; j++) {
               var userStoryKey = issues[i].fields.customfield_11101[j]
               if (typeof (userStoryKey) === 'undefined') {
-                passback.exceptions = addException(passback.exceptions, issues[i].key, 'Task without invalid userstorykey set')
+                passback.forGlobalState.exceptions = addException(passback.forGlobalState.exceptions, issues[i].key, 'Task without invalid userstorykey set')
               }
               else {
                 var epicKey = userStoryEpicMap[userStoryKey]
-                passback.epics[epicKey].user_stories[userStoryKey].tasks[issues[i].key] = {
+                passback.forGlobalState.epics[epicKey].user_stories[userStoryKey].tasks[issues[i].key] = {
                   id: issues[i].id,
                   key: issues[i].key,
                   summary: issues[i].fields.summary,
@@ -304,24 +308,23 @@ function addTasks (commit, epics, userStoryEpicMap, callback, exceptions) {
                   status: issues[i].fields.status.name,
                   story_points: issues[i].fields.customfield_10004,
                   rank: issues[i].fields.customfield_11000,
-                  sprintid: getSprintID(issues[i].fields.customfield_10501, issues[i].key, passback.exceptions)
+                  sprintid: getSprintID(issues[i].fields.customfield_10501, issues[i].key, passback.forGlobalState.exceptions)
                 }
               }
             } // if custom field
             // console.log(epicKey + ':' + userStoryKey)
           }
         }
-        // console.log(epics)
-        passback.commit('SAVE_EPICS', {epics: passback.epics, exceptions: passback.exceptions})
+        passback.commit('SAVE_EPICS', {forGlobalState: forGlobalState})
         passback.commit('COMPLETED_LOADING')
 
         passback.callback.OKcallback.method({msg: 'OK'}, passback.callback.OKcallback.params)
       },
-      params: {commit: commit, callback: callback, epics: epics, exceptions: exceptions}
+      params: {commit: commit, callback: callback, forGlobalState: forGlobalState}
     },
     FAILcallback: {
       method: loadDataErrorFn,
-      params: {commit: commit, callback: callback, epics: epics, exceptions: exceptions}
+      params: {commit: commit, callback: callback}
     }
   }
   JIRAServiceCallStore.dispatch('query', {
