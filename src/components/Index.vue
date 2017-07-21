@@ -31,7 +31,8 @@
         <q-drawer-link icon="home" :to="{path: '/', exact: true}">Home</q-drawer-link>
         <q-drawer-link icon="directions_run" :to="{path: '/sprints', exact: true}">Sprints</q-drawer-link>
         <q-drawer-link icon="pie_chart" :to="{path: '/progress', exact: true}">Progress</q-drawer-link>
-        <q-drawer-link icon="bug_report" :to="{path: '/exceptions', exact: true}">Exceptions</q-drawer-link>
+        <q-drawer-link icon="bug_report" :to="{path: '/exceptions', exact: true}" v-if="numexceptions === 0">Exceptions</q-drawer-link>
+        <q-drawer-link icon="bug_report" :to="{path: '/exceptions', exact: true}" v-if="numexceptions !== 0"><b>Exceptions ({{ numexceptions }})</b></q-drawer-link>
 		<hr>
         <q-drawer-link icon="group_work" :to="{path: '/test', exact: true}">TEST</q-drawer-link>
 		<hr>
@@ -81,6 +82,9 @@ export default {
     },
     pageTitle () {
       return globalStore.state.pageTitle
+    },
+    numexceptions () {
+      return mainJIRADataStore.getters.exceptions.length
     }
   },
   created () {
