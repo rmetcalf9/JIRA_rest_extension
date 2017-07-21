@@ -62,6 +62,7 @@ const mutations = {
                 summedTaskStoryPoints += epics[epic].user_stories[userstory].tasks[task].story_points
               }
             }
+            raiseTaskExecptions(params.forGlobalState, epics[epic].user_stories[userstory].tasks[task], epics[epic].user_stories[userstory])
             newTasks.push(epics[epic].user_stories[userstory].tasks[task])
           }
           if (numEstimatedTasks !== numTasks) {
@@ -135,7 +136,7 @@ const mutations = {
     else {
       state.project.progressPercantage = Math.round((100 * projectSummedTaskBurnedStoryPoints) / projectSummedTaskStoryPoints)
     }
-    raiseSprintExecptions(params.forGlobalState.exceptions, params.forGlobalState.sprints)
+    raiseSprintExecptions(params.forGlobalState)
 
     state.project.numUserStories = numUserStoriesInThisProject
     state.project.numPoints = projectSummedTaskStoryPoints
@@ -152,18 +153,39 @@ const mutations = {
   }
 }
 
-function raiseSprintExecptions (exceptions, sprints) {
-  console.log(sprints)
-  Object.keys(sprints).map(function (objectKey, index) {
-    var x = sprints[objectKey]
+// Raises task exceptions. (Invalid story exceptions raised during initial task load)
+function raiseTaskExecptions (forGlobalState, task, story) {
+  var storyDate = new Date('31-DEC-4712')
+  var taskDate = new Date('31-DEC-4712')
+  if (story.sprintid !== null) {
+    storyDate = forGlobalState.sprints[story.sprintid].end
+  }
+  if (task.sprintid !== null) {
+    taskDate = forGlobalState.sprints[task.sprintid].end
+  }
+
+  if (storyDate < taskDate) {
+    if (task.sprintid === null) {
+      forGlobalState.exceptions = addException(forGlobalState.exceptions, task.key, 'Task not in sprint but associated user story needs to be delivered on ' + storyDate)
+    }
+    else {
+      forGlobalState.exceptions = addException(forGlobalState.exceptions, task.key, 'Task scheduled to be delivered after story')
+    }
+  }
+}
+
+function raiseSprintExecptions (forGlobalState) {
+  // console.log(forGlobalState.sprints)
+  Object.keys(forGlobalState.sprints).map(function (objectKey, index) {
+    var x = forGlobalState.sprints[objectKey]
     if (x.hasTasks) {
       if (x.hasStories) {
-        exceptions = addException(exceptions, 'Sprint ' + x.id, 'Sprint has both tasks and stories')
+        forGlobalState.exceptions = addException(forGlobalState.exceptions, 'Sprint ' + x.id, 'Sprint has both tasks and stories')
       }
     }
     if (!x.hasTasks) {
       if (!x.hasStories) {
-        exceptions = addException(exceptions, 'Sprint ' + x.id, 'Sprint has neither tasks nor stories')
+        forGlobalState.exceptions = addException(forGlobalState.exceptions, 'Sprint ' + x.id, 'Sprint has neither tasks nor stories')
       }
     }
   })
@@ -398,8 +420,8 @@ function getSprintID (sprintField, issueKey, forGlobalState, source) {
       id: sprintID,
       name: gv('name'),
       state: gv('state'),
-      start: gv('startDate'),
-      end: gv('endDate'),
+      start: new Date(gv('startDate')),
+      end: new Date(gv('endDate')),
       complete: gv('completeDate'),
       sequence: gv('sequence'),
       hasTasks: false,
