@@ -12,7 +12,7 @@ const state = {
     numUserStories: 0,
     numPoints: 0,
     numBurnedPoints: 0,
-    sprints: []
+    sprints: {}
   }
 }
 
@@ -32,6 +32,7 @@ const mutations = {
     var projectSummedTaskStoryPoints = 0
     var projectSummedTaskBurnedStoryPoints = 0
     var numUserStoriesInThisProject = 0
+
     for (var epic in epics) {
       var numUserStoriesInThisEpic = 0
       var newUserStories = []
@@ -142,6 +143,7 @@ const mutations = {
     state.project.numPoints = projectSummedTaskStoryPoints
     state.project.numBurnedPoints = projectSummedTaskBurnedStoryPoints
     state.exceptions = params.forGlobalState.exceptions
+    state.stories = params.forGlobalState.stories
     state.project.sprints = params.forGlobalState.sprints
 
     // Sort the epics by JIRA rank
@@ -150,6 +152,15 @@ const mutations = {
       if (ak.rank < bk.rank) return -1
       return 1
     })
+    // Sort epics in each sprint by JIRA rank
+    for (var sprintID in state.project.sprints) {
+      console.log('sorting for ' + sprintID)
+      state.project.sprints[sprintID].epics = state.project.sprints[sprintID].epics.sort(function (ak, bk) {
+        if (ak.rank === bk.rank) return 0
+        if (ak.rank < bk.rank) return -1
+        return 1
+      })
+    }
   }
 }
 
@@ -281,6 +292,7 @@ function addUserStories (commit, forGlobalState, callback) {
             else {
               storyPoints = issues[i].fields.customfield_10004
             }
+            var sprintID = getSprintID(issues[i].fields.customfield_10501, issues[i].key, passback.forGlobalState, 'Story', passback.forGlobalState.epics[epickey])
             var userStory = {
               id: issues[i].id,
               key: userStorykey,
@@ -294,7 +306,7 @@ function addUserStories (commit, forGlobalState, callback) {
               summedStoryPoints: 0,
               summedBurnedStoryPoints: 0,
               rank: issues[i].fields.customfield_11000,
-              sprintid: getSprintID(issues[i].fields.customfield_10501, issues[i].key, passback.forGlobalState, 'Story')
+              sprintid: sprintID
             }
             passback.forGlobalState.epics[epickey].user_stories[issues[i].key] = userStory
             userStoryEpicMap[userStorykey] = epickey
@@ -350,7 +362,7 @@ function addTasks (commit, userStoryEpicMap, callback, forGlobalState) {
                   status: issues[i].fields.status.name,
                   story_points: issues[i].fields.customfield_10004,
                   rank: issues[i].fields.customfield_11000,
-                  sprintid: getSprintID(issues[i].fields.customfield_10501, issues[i].key, passback.forGlobalState, 'Task')
+                  sprintid: getSprintID(issues[i].fields.customfield_10501, issues[i].key, passback.forGlobalState, 'Task', undefined)
                 }
               }
             } // if custom field
@@ -376,7 +388,7 @@ function addTasks (commit, userStoryEpicMap, callback, forGlobalState) {
 }
 
 // source can either be 'Task' or 'Story'
-function getSprintID (sprintField, issueKey, forGlobalState, source) {
+function getSprintID (sprintField, issueKey, forGlobalState, source, epic) {
   if (sprintField === null) return null
   if (sprintField.length === 0) return null
   if (sprintField.length !== 1) {
@@ -425,7 +437,9 @@ function getSprintID (sprintField, issueKey, forGlobalState, source) {
       complete: gv('completeDate'),
       sequence: gv('sequence'),
       hasTasks: false,
-      hasStories: false
+      hasStories: false,
+      epics: [],
+      epicsKeys: {}
     }
     // console.log(forGlobalState.sprints)
     // console.log(forGlobalState.sprints.length)
@@ -436,6 +450,14 @@ function getSprintID (sprintField, issueKey, forGlobalState, source) {
   }
   else if (source === 'Story') {
     forGlobalState.sprints[sprintID].hasStories = true
+  }
+
+  // Add the epic if it is not already there
+  if (typeof (epic) !== 'undefined') {
+    if (typeof (forGlobalState.sprints[sprintID].epicsKeys[epic.key]) === 'undefined') {
+      forGlobalState.sprints[sprintID].epics.push(epic)
+      forGlobalState.sprints[sprintID].epicsKeys[epic.key] = epic.key
+    }
   }
 
   return sprintID

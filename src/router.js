@@ -52,9 +52,10 @@ export default new VueRouter({
       component: load('Index'),
       beforeEnter: requireAuth,
       children: [
-        { path: '', component: load('Home'), beforeEnter (to, from, next) { defaultBeforeNavFn(to, from, next, 'Home') } },
+        { path: '', component: load('DetailedProgress'), beforeEnter (to, from, next) { defaultBeforeNavFn(to, from, next, 'Home') } },
         { path: 'exceptions', component: load('Exceptions'), beforeEnter (to, from, next) { defaultBeforeNavFn(to, from, next, 'Exceptions') } },
         { path: 'sprints', component: load('Sprints'), beforeEnter (to, from, next) { defaultBeforeNavFn(to, from, next, 'Sprints') } },
+        { path: 'sprints/:sprintID', component: load('DetailedProgress'), beforeEnter (to, from, next) { defaultBeforeNavFn(to, from, next, 'Sprint ' + to.params.sprintID) } },
         { path: 'progress', component: load('Progress'), beforeEnter (to, from, next) { defaultBeforeNavFn(to, from, next, 'Progress') } },
         { path: 'test', component: load('Test'), beforeEnter (to, from, next) { defaultBeforeNavFn(to, from, next, 'Temp Test Page') } }
       ]
