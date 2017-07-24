@@ -4,12 +4,12 @@
 	<h2 v-if="typeof(sprint) === 'undefined'">Project Progress - {{ totals.progressPercantage }}%</h2>
 	<h2 v-if="typeof(sprint) !== 'undefined'">Sprint {{ sprint.name }} Progress - {{ totals.progressPercantage }}%</h2>
 	<br>
-	<div class="card" v-for="(epic, key) in epics" :key="epic.key">
+	<div class="card" v-for="(epic2, key) in epics" :key="epic2.key">
 	<div class="card-title bg-primary text-white">
-	  {{ totals.epicPercentage[epic.key] }}% -  {{ epic.name }}
+	  {{ totals.epicPercentage[epic2.key] }}% -  {{ epic2.name }}
 	</div>
       <div class="list">
-        <div v-for="userStory in epic.user_stories" :key="userStory.key" v-if="(typeof(sprint) === 'undefined') || (sprintid === userStory.sprintid)">
+        <div v-for="userStory in epic2.user_stories" :key="userStory.key" v-if="(typeof(sprint) === 'undefined') || (sprintid === userStory.sprintid)">
           <q-collapsible icon="group" :label="userStory.label_text">
             <div class="item has-secondary" v-for="task in userStory.tasks" :key="task.key" v-if="task.status !== 'Done'">
               <i class="item-primary">check_box_outline_blank</i>
@@ -73,18 +73,18 @@ export default {
       }
       var totalPointsSprint = 0
       var burnedPointsSprint = 0
-      for (var epic in x.epics) {
+      for (var epic2 in x.epics) {
         var totalPointsEpic = 0
         var burnedPointsEpic = 0
-        for (var storyKey in x.epics[epic].user_stories) {
-          if (x.epics[epic].user_stories[storyKey].sprintid === parseInt(this.$route.params.sprintID)) {
-            totalPointsEpic += x.epics[epic].user_stories[storyKey].summedStoryPoints
-            burnedPointsEpic += x.epics[epic].user_stories[storyKey].summedBurnedStoryPoints
+        for (var storyKey in x.epics[epic2].user_stories) {
+          if (x.epics[epic2].user_stories[storyKey].sprintid === parseInt(this.$route.params.sprintID)) {
+            totalPointsEpic += x.epics[epic2].user_stories[storyKey].summedStoryPoints
+            burnedPointsEpic += x.epics[epic2].user_stories[storyKey].summedBurnedStoryPoints
           }
         }
-        var epicPercentage = 0
-        if ((totalPointsEpic) !== 0) epicPercentage = (Math.round(100 * burnedPointsEpic / totalPointsEpic))
-        ret.epicPercentage[x.epics[epic].key] = epicPercentage
+        var epicPercentage2 = 0
+        if ((totalPointsEpic) !== 0) epicPercentage2 = (Math.round(100 * burnedPointsEpic / totalPointsEpic))
+        ret.epicPercentage[x.epics[epic2].key] = epicPercentage2
         totalPointsSprint += totalPointsEpic
         burnedPointsSprint += burnedPointsEpic
       }
