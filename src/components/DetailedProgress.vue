@@ -1,15 +1,12 @@
 <template>
   <div>
   
-	<h2 v-if="typeof(sprint) === 'undefined'">Project Progress - {{ project.progressPercantage }}%</h2>
-	<h2 v-if="typeof(sprint) !== 'undefined'">Sprint {{ sprint.name }} Progress - TODO%</h2>
+	<h2 v-if="typeof(sprint) === 'undefined'">Project Progress - {{ totals.progressPercantage }}%</h2>
+	<h2 v-if="typeof(sprint) !== 'undefined'">Sprint {{ sprint.name }} Progress - {{ totals.progressPercantage }}%</h2>
 	<br>
 	<div class="card" v-for="(epic, key) in epics" :key="epic.key">
-	<div class="card-title bg-primary text-white" v-if="epic.summedStoryPoints !== 0">
-	  {{Math.round((epic.summedBurnedStoryPoints * 100)/epic.summedStoryPoints) }}% -  {{ epic.name }}
-	</div>
-	<div class="card-title bg-primary text-white" v-if="epic.summedStoryPoints === 0">
-	  0% -  {{ epic.name }}
+	<div class="card-title bg-primary text-white">
+	  {{ totals.epicPercentage[epic.key] }}% -  {{ epic.name }}
 	</div>
       <div class="list">
         <div v-for="userStory in epic.user_stories" :key="userStory.key" v-if="(typeof(sprint) === 'undefined') || (sprintid === userStory.sprintid)">
@@ -58,6 +55,42 @@ export default {
       var x = mainJIRADataStore.getters.project.sprints[this.$route.params.sprintID]
       // if (typeof(x) === 'undefined') return undefined // Will return undefined for no sprint
       return x
+    },
+    totals () {
+      var ret = {
+        progressPercantage: mainJIRADataStore.getters.project.progressPercantage,
+        epicPercentage: []
+      }
+      var x = mainJIRADataStore.getters.project.sprints[this.$route.params.sprintID]
+      if (typeof (x) === 'undefined') {
+        var epics = mainJIRADataStore.getters.epics
+        for (var epic in epics) {
+          var epicPercentage = 0
+          if ((epics[epic].summedStoryPoints) !== 0) epicPercentage = Math.round((epics[epic].summedBurnedStoryPoints * 100) / epics[epic].summedStoryPoints)
+          ret.epicPercentage[epics[epic].key] = epicPercentage
+        }
+        return ret
+      }
+      var totalPointsSprint = 0
+      var burnedPointsSprint = 0
+      for (var epic in x.epics) {
+        var totalPointsEpic = 0
+        var burnedPointsEpic = 0
+        for (var storyKey in x.epics[epic].user_stories) {
+          if (x.epics[epic].user_stories[storyKey].sprintid === parseInt(this.$route.params.sprintID)) {
+            totalPointsEpic += x.epics[epic].user_stories[storyKey].summedStoryPoints
+            burnedPointsEpic += x.epics[epic].user_stories[storyKey].summedBurnedStoryPoints
+          }
+        }
+        var epicPercentage = 0
+        if ((totalPointsEpic) !== 0) epicPercentage = (Math.round(100 * burnedPointsEpic / totalPointsEpic))
+        ret.epicPercentage[x.epics[epic].key] = epicPercentage
+        totalPointsSprint += totalPointsEpic
+        burnedPointsSprint += burnedPointsEpic
+      }
+      ret.progressPercantage = 0
+      if ((totalPointsSprint) !== 0) ret.progressPercantage = (Math.round(100 * burnedPointsSprint / totalPointsSprint))
+      return ret
     }
 
   }

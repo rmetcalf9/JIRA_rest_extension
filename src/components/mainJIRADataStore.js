@@ -154,7 +154,6 @@ const mutations = {
     })
     // Sort epics in each sprint by JIRA rank
     for (var sprintID in state.project.sprints) {
-      console.log('sorting for ' + sprintID)
       state.project.sprints[sprintID].epics = state.project.sprints[sprintID].epics.sort(function (ak, bk) {
         if (ak.rank === bk.rank) return 0
         if (ak.rank < bk.rank) return -1
