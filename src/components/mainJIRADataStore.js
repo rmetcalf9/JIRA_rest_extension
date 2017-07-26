@@ -386,19 +386,13 @@ function addTasks (commit, userStoryEpicMap, callback, forGlobalState) {
   })
 }
 
-// source can either be 'Task' or 'Story'
-function getSprintID (sprintField, issueKey, forGlobalState, source, epic) {
-  if (sprintField === null) return null
-  if (sprintField.length === 0) return null
-  if (sprintField.length !== 1) {
-    forGlobalState.exceptions = addException(forGlobalState.exceptions, issueKey, 'Issue in more than one sprint')
-    return null
-  }
+function getSprintDataFromJIRAString (jiraString) {
+  // Return the JSON for this sprint or null
   // sprintField is something like com.atlassian.greenhopper.service.sprint.Sprint@22edc5f4[id=86,rapidViewId=89,state=ACTIVE,name=Simp Task Sprint 1,startDate=2017-07-18T15:54:08.499+01:00,endDate=2017-07-25T15:54:00.000+01:00,completeDate=<null>,sequence=86]
   // extract the ID
 
-  var fieldListStart = sprintField[0].search('\\[id=')
-  var fieldList = sprintField[0].substr(fieldListStart + 1, sprintField[0].length - (fieldListStart + 2)).split(',')
+  var fieldListStart = jiraString.search('\\[id=')
+  var fieldList = jiraString.substr(fieldListStart + 1, jiraString.length - (fieldListStart + 2)).split(',')
   fieldList = fieldList.map(function (x) {
     var pair = x.split('=')
     return {
@@ -417,49 +411,55 @@ function getSprintID (sprintField, issueKey, forGlobalState, source, epic) {
     return ret
   }
 
-  // should get is fieldList='86,ra'
-  var sprintID = gv('id') // fieldList.substring(0, fieldList.search(','))
+  return {
+    id: parseInt(gv('id')),
+    name: gv('name'),
+    state: gv('state'),
+    start: new Date(gv('startDate')),
+    end: new Date(gv('endDate')),
+    complete: gv('completeDate'),
+    sequence: gv('sequence'),
+    hasTasks: false,
+    hasStories: false,
+    epics: [],
+    epicsKeys: {}
+  }
+}
 
-  sprintID = parseInt(sprintID)
+// source can either be 'Task' or 'Story'
+function getSprintID (sprintField, issueKey, forGlobalState, source, epic) {
+  if (sprintField === null) return null
+  if (sprintField.length === 0) return null
 
-  // console.log('SPID=')
-  // console.log(sprintID)
-  // console.log(forGlobalState.sprints[sprintID])
-
-  if (typeof (forGlobalState.sprints[sprintID]) === 'undefined') {
-    forGlobalState.sprints[sprintID] = {
-      id: sprintID,
-      name: gv('name'),
-      state: gv('state'),
-      start: new Date(gv('startDate')),
-      end: new Date(gv('endDate')),
-      complete: gv('completeDate'),
-      sequence: gv('sequence'),
-      hasTasks: false,
-      hasStories: false,
-      epics: [],
-      epicsKeys: {}
+  // Add all sprints we have found to forGlobalState
+  var sprintInfo = null
+  for (var key in sprintField) {
+    var sprintInfo2 = getSprintDataFromJIRAString(sprintField[key])
+    if (typeof (forGlobalState.sprints[sprintInfo2.id]) === 'undefined') forGlobalState.sprints[sprintInfo2.id] = sprintInfo2
+    if (sprintInfo === null) {
+      sprintInfo = sprintInfo2
     }
-    // console.log(forGlobalState.sprints)
-    // console.log(forGlobalState.sprints.length)
+    else {
+      if (sprintInfo2.start > sprintInfo.start) sprintInfo = sprintInfo2
+    }
   }
 
   if (source === 'Task') {
-    forGlobalState.sprints[sprintID].hasTasks = true
+    forGlobalState.sprints[sprintInfo.id].hasTasks = true
   }
   else if (source === 'Story') {
-    forGlobalState.sprints[sprintID].hasStories = true
+    forGlobalState.sprints[sprintInfo.id].hasStories = true
   }
 
   // Add the epic if it is not already there
   if (typeof (epic) !== 'undefined') {
-    if (typeof (forGlobalState.sprints[sprintID].epicsKeys[epic.key]) === 'undefined') {
-      forGlobalState.sprints[sprintID].epics.push(epic)
-      forGlobalState.sprints[sprintID].epicsKeys[epic.key] = epic.key
+    if (typeof (forGlobalState.sprints[sprintInfo.id].epicsKeys[epic.key]) === 'undefined') {
+      forGlobalState.sprints[sprintInfo.id].epics.push(epic)
+      forGlobalState.sprints[sprintInfo.id].epicsKeys[epic.key] = epic.key
     }
   }
 
-  return sprintID
+  return sprintInfo.id
 }
 
 Vue.use(Vuex)
