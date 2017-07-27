@@ -2,6 +2,7 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
 import JIRAServiceCallStore from './JIRAServiceCallStore'
+import getIssueRetervialJQL from './jqlArgumentUtils'
 
 const state = {
   state: 0, // 0 = CREATED, 1 = LOADING, 2 = LOADED, 3 = ERROR
@@ -13,6 +14,11 @@ const state = {
     numPoints: 0,
     numBurnedPoints: 0,
     sprints: {}
+  },
+  srcJiraData: {
+    epicProjects: ['SPI'],
+    storyProjects: ['SPI'],
+    taskProjects: ['SPI']
   }
 }
 
@@ -231,7 +237,8 @@ const actions = {
           var forGlobalState = {
             epics: [],
             exceptions: [],
-            sprints: {}
+            sprints: {},
+            state: state // Used to access state
           }
           for (var i = 0; i < issues.length; i++) {
             forGlobalState.epics[issues[i].key] = {
@@ -248,7 +255,7 @@ const actions = {
           // now query user stories
           addUserStories(passback.commit, forGlobalState, passback.callback)
         },
-        params: {commit: commit, callback: params.callback}
+        params: {state: state, commit: commit, callback: params.callback}
       },
       FAILcallback: {
         method: loadDataErrorFn,
@@ -256,7 +263,7 @@ const actions = {
       }
     }
     JIRAServiceCallStore.dispatch('query', {
-      jql: 'project+%3D+SPI+AND+issuetype+%3D+Epic+ORDER+BY+KEY',
+      jql: getIssueRetervialJQL(state.srcJiraData.epicProjects, ['Epic']),
       callback: callback
     })
     // state.calljira.query('ABC', callback)
@@ -321,7 +328,7 @@ function addUserStories (commit, forGlobalState, callback) {
     }
   }
   JIRAServiceCallStore.dispatch('query', {
-    jql: 'project+%3D+SPI+AND+issuetype+%3D+Story+ORDER+BY+KEY',
+    jql: getIssueRetervialJQL(forGlobalState.state.srcJiraData.storyProjects, ['Story']),
     callback: callback2
   })
 }
@@ -381,7 +388,7 @@ function addTasks (commit, userStoryEpicMap, callback, forGlobalState) {
     }
   }
   JIRAServiceCallStore.dispatch('query', {
-    jql: 'project+%3D+SPI+AND+issuetype+%3D+Task+ORDER+BY+KEY',
+    jql: getIssueRetervialJQL(forGlobalState.state.srcJiraData.taskProjects, ['Task']),
     callback: callback2
   })
 }
