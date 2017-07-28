@@ -2,7 +2,7 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
 import JIRAServiceCallStore from './JIRAServiceCallStore'
-import getIssueRetervialJQL from './jqlArgumentUtils'
+import jqlArgumentUtils from './jqlArgumentUtils'
 
 // Main state for this store
 const state = {
@@ -167,6 +167,9 @@ const mutations = {
         return 1
       })
     }
+  },
+  SAVE_JIRADATA (state, params) {
+    state.srcJiraData = params.srcJiraData
   }
 }
 
@@ -224,10 +227,40 @@ const getters = {
   },
   project: (state, getters) => {
     return state.project
+  },
+  srcJiraData: (state, getters) => {
+    return state.srcJiraData
   }
 }
 
 const actions = {
+  setSelectedProjects (store, params) {
+    // Will set the selected projects
+    if (jqlArgumentUtils.joinStringArray(state.srcJiraData.epicProjects) === jqlArgumentUtils.joinStringArray(params.projects)) {
+      params.callback.OKcallback.method({msg: 'OK'}, params.callback.OKcallback.params)
+      return
+    }
+
+    store.commit('SAVE_JIRADATA', {srcJiraData: {
+      epicProjects: params.projects,
+      storyProjects: params.projects,
+      taskProjects: params.projects
+    }})
+
+    var callback = {
+      OKcallback: {
+        method: function (retData, passback) {
+          params.callback.OKcallback.method({msg: 'OK'}, params.callback.OKcallback.params)
+        },
+        params: {}
+      },
+      FAILcallback: {
+        method: loadDataErrorFn,
+        params: {commit: store.commit, callback: params.callback}
+      }
+    }
+    store.dispatch('loadJIRAdata', {callback: callback})
+  },
   loadJIRAdata ({commit, state}, params) {
     commit('START_LOADING')
     var callback = {
@@ -264,7 +297,7 @@ const actions = {
       }
     }
     JIRAServiceCallStore.dispatch('query', {
-      jql: getIssueRetervialJQL(state.srcJiraData.epicProjects, ['Epic']),
+      jql: jqlArgumentUtils.getIssueRetervialJQL(state.srcJiraData.epicProjects, ['Epic']),
       callback: callback
     })
     // state.calljira.query('ABC', callback)
@@ -329,7 +362,7 @@ function addUserStories (commit, forGlobalState, callback) {
     }
   }
   JIRAServiceCallStore.dispatch('query', {
-    jql: getIssueRetervialJQL(forGlobalState.state.srcJiraData.storyProjects, ['Story']),
+    jql: jqlArgumentUtils.getIssueRetervialJQL(forGlobalState.state.srcJiraData.storyProjects, ['Story']),
     callback: callback2
   })
 }
@@ -389,7 +422,7 @@ function addTasks (commit, userStoryEpicMap, callback, forGlobalState) {
     }
   }
   JIRAServiceCallStore.dispatch('query', {
-    jql: getIssueRetervialJQL(forGlobalState.state.srcJiraData.taskProjects, ['Task']),
+    jql: jqlArgumentUtils.getIssueRetervialJQL(forGlobalState.state.srcJiraData.taskProjects, ['Task']),
     callback: callback2
   })
 }

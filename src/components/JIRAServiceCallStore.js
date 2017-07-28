@@ -126,8 +126,16 @@ function callGetServiceINTERNAL (state, URLPath, callback, authkey) {
         callback.FAILcallback.method({msg: 'Bad Response ' + response.message, response: response}, callback.FAILcallback.params)
       }
     }
+    else if (typeof (response.response.data) !== 'undefined') {
+      if (typeof (response.response.data.errorMessages) !== 'undefined') {
+        callback.FAILcallback.method({msg: 'Bad Response(' + response.response.data.errorMessages.length + ') ' + response.response.data.errorMessages, response: response.response}, callback.FAILcallback.params)
+      }
+      else {
+        callback.FAILcallback.method({msg: 'Data Bad Response ' + response.response.status, response: response.response}, callback.FAILcallback.params)
+      }
+    }
     else {
-      callback.FAILcallback.method({msg: 'Bad Response ' + response.response.status, response: response.response}, callback.FAILcallback.params)
+      callback.FAILcallback.method({msg: 'Nested Bad Response ' + response.response.status, response: response.response}, callback.FAILcallback.params)
     }
   })
 }

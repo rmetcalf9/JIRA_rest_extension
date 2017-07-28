@@ -57,7 +57,8 @@ export default new VueRouter({
         { path: 'sprints', component: load('Sprints'), beforeEnter (to, from, next) { defaultBeforeNavFn(to, from, next, 'Sprints') } },
         { path: 'sprints/:sprintID', component: load('DetailedProgress'), beforeEnter (to, from, next) { defaultBeforeNavFn(to, from, next, 'Sprint ' + to.params.sprintID) } },
         { path: 'progress', component: load('Progress'), beforeEnter (to, from, next) { defaultBeforeNavFn(to, from, next, 'Progress') } },
-        { path: 'test', component: load('Test'), beforeEnter (to, from, next) { defaultBeforeNavFn(to, from, next, 'Temp Test Page') } }
+        { path: 'test', component: load('Test'), beforeEnter (to, from, next) { defaultBeforeNavFn(to, from, next, 'Temp Test Page') } },
+        { path: '/changeproject', component: load('ChangeProject'), beforeEnter (to, from, next) { defaultBeforeNavFn(to, from, next, 'Change Project') } }
       ]
     },
     { path: '/login', component: load('Login'), beforeEnter (to, from, next) { defaultBeforeNavFn(to, from, next, 'Login') } },
