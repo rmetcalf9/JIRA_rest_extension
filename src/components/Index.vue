@@ -34,7 +34,7 @@
         <q-drawer-link icon="bug_report" :to="{path: '/exceptions', exact: true}" v-if="numexceptions === 0">Exceptions</q-drawer-link>
         <q-drawer-link icon="bug_report" :to="{path: '/exceptions', exact: true}" v-if="numexceptions !== 0"><b>Exceptions ({{ numexceptions }})</b></q-drawer-link>
 		<hr>
-        <q-drawer-link icon="group_work" :to="{path: '/test', exact: true}">TEST</q-drawer-link>
+        <q-drawer-link icon="group_work" :to="{path: '/test', exact: true}">TEST2</q-drawer-link>
 		<hr>
         <q-drawer-link icon="exit_to_app" :to="{path: '/logout', exact: true}">
           Logout
