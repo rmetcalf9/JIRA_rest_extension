@@ -4,6 +4,7 @@ import Vuex from 'vuex'
 import JIRAServiceCallStore from './JIRAServiceCallStore'
 import getIssueRetervialJQL from './jqlArgumentUtils'
 
+// Main state for this store
 const state = {
   state: 0, // 0 = CREATED, 1 = LOADING, 2 = LOADED, 3 = ERROR
   epics: [],
