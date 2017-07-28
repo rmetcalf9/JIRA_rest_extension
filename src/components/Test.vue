@@ -1,5 +1,5 @@
 <template>
-  <div>TEST HOME <br>{{ epic_data }}
+  <div>TEST2 HOME <br>{{ epic_data }}
   <br>{{ loading_state_txt }}
   <h3>Epcis</h3>
   {{ epics }}

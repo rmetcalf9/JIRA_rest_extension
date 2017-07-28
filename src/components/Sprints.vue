@@ -39,6 +39,7 @@
 </template>
 
 <script>
+// import main store
 import mainJIRADataStore from './mainJIRADataStore'
 
 export default {
