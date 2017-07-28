@@ -2,6 +2,10 @@
 
 > A Quasar project
 
+## JIRA API Details
+https://developer.atlassian.com/jiradev/jira-apis
+
+
 ## Host
 Not working due to SSL issues
 https://rmetcalf9.github.io/JIRA_rest_extension/index.html
