@@ -114,6 +114,7 @@ const mutations = {
           }
           // var progress = '0/0 100%'
           epics[epic].user_stories[userstory].label_text = progress + ' - ' + us.key + ' (' + us.status + ') ' + us.summary
+          epics[epic].user_stories[userstory].completed = (summedTaskBurnedStoryPoints === summedTaskStoryPoints)
 
           epicSummedTaskStoryPoints += epics[epic].user_stories[userstory].summedStoryPoints
           epicSummedTaskBurnedStoryPoints += epics[epic].user_stories[userstory].summedBurnedStoryPoints
@@ -346,7 +347,8 @@ function addUserStories (commit, forGlobalState, callback) {
               summedStoryPoints: 0,
               summedBurnedStoryPoints: 0,
               rank: issues[i].fields.customfield_11000,
-              sprintid: sprintID
+              sprintid: sprintID,
+              completed: false
             }
             passback.forGlobalState.epics[epickey].user_stories[issues[i].key] = userStory
             userStoryEpicMap[userStorykey] = epickey

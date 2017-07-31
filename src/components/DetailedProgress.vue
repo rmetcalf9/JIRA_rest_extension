@@ -9,7 +9,7 @@
 	  {{ totals.epicPercentage[epic2.key] }}% -  {{ epic2.name }}
 	</div>
       <div class="list">
-        <div v-for="userStory in epic2.user_stories" :key="userStory.key" v-if="(typeof(sprint) === 'undefined') || (sprintid === userStory.sprintid)">
+        <div v-for="userStory in epic2.user_stories" :key="userStory.key" v-bind:style="(userStory.completed) ? 'color: green' : ''" v-if="(typeof(sprint) === 'undefined') || (sprintid === userStory.sprintid)">
           <q-collapsible icon="group" :label="userStory.label_text">
             <div class="item has-secondary" v-for="task in userStory.tasks" :key="task.key" v-if="task.status !== 'Done'">
               <i class="item-primary">check_box_outline_blank</i>
