@@ -2,7 +2,7 @@
   <div>
   
 	<h2 v-if="typeof(sprint) === 'undefined'">Project Progress - {{ totals.progressPercantage }}%</h2>
-	<h2 v-if="typeof(sprint) !== 'undefined'">Sprint {{ sprint.name }} Progress - {{ totals.progressPercantage }}%</h2>
+	<h2 v-if="typeof(sprint) !== 'undefined'">{{ sprint.name }} Progress - {{ totals.progressPercantage }}%</h2>
 	<br>
 	<div class="card" v-for="(epic2, key) in epics" :key="epic2.key">
 	<div class="card-title bg-primary text-white">
@@ -29,6 +29,9 @@
         </div>
       </div> 
     </div>
+	<p>
+	{{ totals.totalBurnedPoints }} point out of {{ totals.totalPoints }} points have been burned = {{ totals.progressPercantage }}%
+	</p>
 	</div>
 </template>
 
@@ -59,6 +62,8 @@ export default {
     totals () {
       var ret = {
         progressPercantage: mainJIRADataStore.getters.project.progressPercantage,
+		totalPoints: 0,
+		totalBurnedPoints: 0,
         epicPercentage: []
       }
       var x = mainJIRADataStore.getters.project.sprints[this.$route.params.sprintID]
@@ -90,6 +95,8 @@ export default {
       }
       ret.progressPercantage = 0
       if ((totalPointsSprint) !== 0) ret.progressPercantage = (Math.round(100 * burnedPointsSprint / totalPointsSprint))
+	  ret.totalPoints = totalPointsSprint
+	  ret.totalBurnedPoints = burnedPointsSprint
       return ret
     }
 
