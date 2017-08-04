@@ -29,8 +29,8 @@
         </div>
       </div> 
     </div>
-	<p>
-	{{ totals.totalBurnedPoints }} point out of {{ totals.totalPoints }} points have been burned = {{ totals.progressPercantage }}%
+	<p v-if="typeof(sprint) !== 'undefined'">
+	{{ totals.totalBurnedPoints }} out of {{ totals.totalPoints }} points have been burned = {{ totals.progressPercantage }}%
 	</p>
 	</div>
 </template>
