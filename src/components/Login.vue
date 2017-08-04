@@ -9,12 +9,14 @@
     <div class="layout-view">
         <div class="text-center">
 			<br>
+			<form>
     	    <p class="caption">Please Login:</p>
     	    <input v-model="username" placeholder="Username">
     	    <br>
     	    <input type="password" v-model="password" placeholder="Password">
 			<br>
 			<button class="primary small" @click="login">Login</button>
+			</form>
         </div>
     </div>
   </q-layout>
