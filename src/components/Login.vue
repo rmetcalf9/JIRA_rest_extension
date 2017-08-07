@@ -9,7 +9,7 @@
     <div class="layout-view">
         <div class="text-center">
 			<br>
-			<form>
+			<form onClick="return false;">
     	    <p class="caption">Please Login:</p>
     	    <input v-model="username" placeholder="Username">
     	    <br>
