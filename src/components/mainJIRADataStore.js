@@ -396,15 +396,20 @@ function addTasks (commit, userStoryEpicMap, callback, forGlobalState) {
               }
               else {
                 var epicKey = userStoryEpicMap[userStoryKey]
-                passback.forGlobalState.epics[epicKey].user_stories[userStoryKey].tasks[issues[i].key] = {
-                  id: issues[i].id,
-                  key: issues[i].key,
-                  summary: issues[i].fields.summary,
-                  description: issues[i].fields.description,
-                  status: issues[i].fields.status.name,
-                  story_points: issues[i].fields.customfield_10004,
-                  rank: issues[i].fields.customfield_11000,
-                  sprintid: getSprintID(issues[i].fields.customfield_10501, issues[i].key, passback.forGlobalState, 'Task', undefined)
+                if (typeof (epicKey) === 'undefined') {
+                  passback.forGlobalState.exceptions = addException(passback.forGlobalState.exceptions, issues[i].key, 'Task has invalid asosicated user story (' + userStoryKey + ' - is it actually a user story???)')
+                }
+                else {
+                  passback.forGlobalState.epics[epicKey].user_stories[userStoryKey].tasks[issues[i].key] = {
+                    id: issues[i].id,
+                    key: issues[i].key,
+                    summary: issues[i].fields.summary,
+                    description: issues[i].fields.description,
+                    status: issues[i].fields.status.name,
+                    story_points: issues[i].fields.customfield_10004,
+                    rank: issues[i].fields.customfield_11000,
+                    sprintid: getSprintID(issues[i].fields.customfield_10501, issues[i].key, passback.forGlobalState, 'Task', undefined)
+                  }
                 }
               }
             } // if custom field
