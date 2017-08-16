@@ -231,6 +231,23 @@ const getters = {
   },
   srcJiraData: (state, getters) => {
     return state.srcJiraData
+  },
+  blockages: (state, getters) => {
+    var returnValue = []
+    for (var epic in state.epics) {
+      for (var userStory in state.epics[epic].user_stories) {
+        for (var task in state.epics[epic].user_stories[userStory].tasks) {
+          if (state.epics[epic].user_stories[userStory].tasks[task].status === 'On Hold') {
+            returnValue.push({
+              Epic: { key: state.epics[epic].key, name: state.epics[epic].name },
+              Story: { key: state.epics[epic].user_stories[userStory].key, summary: state.epics[epic].user_stories[userStory].summary },
+              Task: state.epics[epic].user_stories[userStory].tasks[task]
+            })
+          }
+        }
+      }
+    }
+    return returnValue
   }
 }
 
