@@ -174,15 +174,26 @@ const mutations = {
   }
 }
 
+function padWithLeadingZero (num, places) {
+  var tmp = '000000000000000000000000000000000000000000000000000' + num.toString().trim()
+  return tmp.substring(tmp.length - places)
+}
+function truncDate (date) {
+  var monthNames = [
+    'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'
+  ]
+  return new Date(padWithLeadingZero(date.getDate(), 2) + ' ' + monthNames[date.getMonth()] + ' ' + padWithLeadingZero(date.getFullYear(), 4))
+}
+
 // Raises task exceptions. (Invalid story exceptions raised during initial task load)
 function raiseTaskExecptions (forGlobalState, task, story) {
   var storyDate = new Date('31-DEC-4712')
   var taskDate = new Date('31-DEC-4712')
   if (story.sprintid !== null) {
-    storyDate = forGlobalState.sprints[story.sprintid].end
+    storyDate = truncDate(forGlobalState.sprints[story.sprintid].end)
   }
   if (task.sprintid !== null) {
-    taskDate = forGlobalState.sprints[task.sprintid].end
+    taskDate = truncDate(forGlobalState.sprints[task.sprintid].end)
   }
 
   if (storyDate < taskDate) {
@@ -190,7 +201,7 @@ function raiseTaskExecptions (forGlobalState, task, story) {
       forGlobalState.exceptions = addException(forGlobalState.exceptions, task.key, 'Task not in sprint but associated user story needs to be delivered on ' + storyDate)
     }
     else {
-      forGlobalState.exceptions = addException(forGlobalState.exceptions, task.key, 'Task scheduled to be delivered after story')
+      forGlobalState.exceptions = addException(forGlobalState.exceptions, task.key, 'Task scheduled to be delivered after story (Task ' + taskDate + ' -> Story ' + storyDate)
     }
   }
 }
