@@ -2,6 +2,7 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
 import JIRAServiceCallStore from './JIRAServiceCallStore'
+import ConfluenceServiceCallStore from './ConfluenceServiceCallStore'
 
 const state = {
   pageTitle: 'Default Page Title'
@@ -28,6 +29,7 @@ const actions = {
     // Need to call JIRA and ensure this is a valid user
     var authToken = btoa(params.username + ':' + params.password)
     JIRAServiceCallStore.dispatch('setAuthKey', {authToken: 'Basic ' + authToken, callback: params.callback})
+    ConfluenceServiceCallStore.dispatch('setAuthKey', {authToken: 'Basic ' + authToken, callback: params.callback})
     //  callJIRAstore.getters.calljira.setAuthKey('Basic ' + authToken, params.callback)
   }
 }

@@ -73,3 +73,7 @@ Pass through callBack
     }
 ```
 
+
+# Vue modules
+
+npm install vue-clipboard
