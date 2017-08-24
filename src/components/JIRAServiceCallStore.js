@@ -22,6 +22,11 @@ const mutations = {
 const getters = {
   isAuthKeySet: (state, getters) => {
     return state.authkey !== ''
+  },
+  getIssueURLGenerator: (state, getters) => {
+    return function (issueID) {
+      return 'https://' + state.host + '/browse/' + issueID
+    }
   }
 }
 

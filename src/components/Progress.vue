@@ -12,7 +12,7 @@
 			</thead>
 			<tbody>
 				<tr v-for="epic in epics">
-					<td data-th="Epic" class="text-left">{{ epic.key }} - {{ epic.name }}</td>
+					<td data-th="Epic" class="text-left"><a v-bind:href="issueURLGenerator(epic.key)">{{ epic.key }}</a> - {{ epic.name }}</td>
 					<td data-th="Stories" class="text-right">{{ epic.user_stories.length }}</td>
 					<td data-th="Points" class="text-right">{{ epic.summedBurnedStoryPoints }}/{{ epic.summedStoryPoints }}</td>
 					<td data-th="Progress" class="text-right" v-if="epic.summedStoryPoints !== 0">{{ Math.round(100 * (epic.summedBurnedStoryPoints / epic.summedStoryPoints)) }}%</td>
@@ -40,9 +40,9 @@
 			</thead>
 			<tbody>
 				<tr v-for="blockage in blockages">
-					<td data-th="Epic" >{{ blockage.Epic.name }}</td>
-					<td data-th="Story">{{ blockage.Story.key }}</td>
-					<td data-th="Blocked Task">{{ blockage.Task.key }} - {{ blockage.Task.summary }}</td>
+					<td data-th="Epic" ><a v-bind:href="issueURLGenerator(blockage.Epic.key)">{{ blockage.Epic.name }}</a></td>
+					<td data-th="Story"><a v-bind:href="issueURLGenerator(blockage.Story.key)">{{ blockage.Story.key }}</a></td>
+					<td data-th="Blocked Task"><a v-bind:href="issueURLGenerator(blockage.Task.key)">{{ blockage.Task.key }}</a> - {{ blockage.Task.summary }}</td>
 				</tr>
 			</tbody>
 		</table>
@@ -53,6 +53,7 @@
 </template>
 
 <script>
+import JIRAServiceCallStore from './JIRAServiceCallStore'
 import mainJIRADataStore from './mainJIRADataStore'
 import confluenceServiceCallStore from './ConfluenceServiceCallStore'
 import { Toast } from 'quasar'
@@ -68,6 +69,9 @@ export default {
     }
   },
   computed: {
+    issueURLGenerator () {
+      return JIRAServiceCallStore.getters.getIssueURLGenerator
+    },
     epic_data () {
       return mainJIRADataStore.state.tmp
     },
@@ -109,6 +113,8 @@ export default {
         return
       }
 
+      var issueURLGenerator = JIRAServiceCallStore.getters.getIssueURLGenerator
+
       var newBodyString = ''
 
       var now = new Date()
@@ -121,7 +127,7 @@ export default {
       for (var epicIdx in mainJIRADataStore.getters.epics) {
         var epic = mainJIRADataStore.getters.epics[epicIdx]
         newBodyString += '<tr>'
-        newBodyString += '<td><span style="color: rgb(0,0,0);">' + epic.key + ' - ' + epic.name + '</span></td>'
+        newBodyString += '<td><span style="color: rgb(0,0,0);"><a href="' + issueURLGenerator(epic.key) + '">' + epic.key + '</a> - ' + epic.name + '</span></td>'
         newBodyString += '<td style="text-align: right;">' + epic.user_stories.length + '</td>'
         newBodyString += '<td style="text-align: right;">' + epic.summedBurnedStoryPoints + '/' + epic.summedStoryPoints + '</td>'
         if (epic.summedStoryPoints !== 0) {
@@ -149,9 +155,9 @@ export default {
         for (var blockageIdx in mainJIRADataStore.getters.blockages) {
           var blockage = mainJIRADataStore.getters.blockages[blockageIdx]
           newBodyString += '<tr>'
-          newBodyString += '<td>' + blockage.Epic.name + '</td>'
-          newBodyString += '<td>' + blockage.Story.key + '</td>'
-          newBodyString += '<td>' + blockage.Task.key + ' - ' + blockage.Task.summary + '</td>'
+          newBodyString += '<td><a href="' + issueURLGenerator(blockage.Epic.key) + '">' + blockage.Epic.name + '</a></td>'
+          newBodyString += '<td><a href="' + issueURLGenerator(blockage.Story.key) + '">' + blockage.Story.key + '</a></td>'
+          newBodyString += '<td><a href="' + issueURLGenerator(blockage.Task.key) + '">' + blockage.Task.key + '</a> - ' + blockage.Task.summary + '</td>'
           newBodyString += '<td>&nbsp;</td>'
           newBodyString += '</tr>'
         }
