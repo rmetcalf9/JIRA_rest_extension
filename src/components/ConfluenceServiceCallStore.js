@@ -36,7 +36,8 @@ function buildUpdateJSONPayload (expandVersionRecord, newHTML) {
   newBody.storage.value = newHTML + '<hr />' + newBody.storage.value
   return {
     'version': {
-      'number': (expandVersionRecord.version.number + 1)
+      'number': (expandVersionRecord.version.number + 1),
+      'message': 'Automatic upate from JIRA rest extentions by RJM'
     },
     'title': expandVersionRecord.title,
     'type': expandVersionRecord.type,
