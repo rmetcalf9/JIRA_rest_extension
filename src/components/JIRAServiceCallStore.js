@@ -5,7 +5,8 @@ import axios from 'axios'
 // JIRA API Doc: https://docs.atlassian.com/jira/REST/server/#api/2/search-search
 
 const state = {
-  host: 'http://cc-rjmetcal.ic.ac.uk:1337/jira.cc.ic.ac.uk',
+  corsproxyprefix: 'http://cc-rjmetcal.ic.ac.uk:1337/',
+  host: 'jira.cc.ic.ac.uk',
   authkey: ''
 }
 
@@ -99,7 +100,7 @@ function callGetServiceINTERNAL (state, URLPath, callback, authkey) {
   // console.log('Making call the config is:')
   // console.log(config)
   axios.get(
-    state.host + URLPath,
+    state.corsproxyprefix + state.host + URLPath,
     config
   ).then(function (response) {
     // console.log('callGetServiceINTERNAL response')
