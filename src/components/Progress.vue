@@ -48,6 +48,7 @@
 		</table>
 		<hr>
 		<button class="primary small" @click="copy">Update page in confluence</button>
+		 <a v-if="(confluencePageContentTitle !== '')" v-bind:href="'https://wiki.imperial.ac.uk/display/IED/' + confluencePageContentTitle">View in Confluence</a>
   </div>
 </template>
 
@@ -84,6 +85,15 @@ export default {
     },
     blockages () {
       return mainJIRADataStore.getters.blockages
+    },
+    confluencePageContentTitle () {
+      if (mainJIRADataStore.getters.srcJiraData.epicProjects[0] === 'SPI') {
+        return 'SIMP+Integrations+diary'
+      }
+      if (mainJIRADataStore.getters.srcJiraData.epicProjects[0] === 'PRJ102') {
+        return 'TMP+TO+DELETE'
+      }
+      return ''
     }
   },
   methods: {
@@ -92,12 +102,10 @@ export default {
         Toast.create('Only works when single project is selected')
         return
       }
-      var pageContentTitle = ''
-      if (mainJIRADataStore.getters.srcJiraData.epicProjects[0] === 'SPI') {
-        pageContentTitle = 'SIMP+Integrations+diary'
-      }
+      console.log(this)
+      var pageContentTitle = this.confluencePageContentTitle
       if (pageContentTitle === '') {
-        Toast.create('No concluence location for this project')
+        Toast.create('No confluence location for this project')
         return
       }
 
