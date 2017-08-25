@@ -33,6 +33,7 @@
 		<table style="margin-top: 30px;" class="q-table bordered striped-odd" v-if="(blockages.length !== 0)">
 			<thead>
 				<tr>
+					<th class="text-left">Assignee</th>
 					<th class="text-left">Epic</th>
 					<th class="text-left">Story</th>
 					<th class="text-left">Blocked Task</th>
@@ -40,6 +41,9 @@
 			</thead>
 			<tbody>
 				<tr v-for="blockage in blockages">
+					<td data-th="Assignee"><div v-if="blockage.Task.assignee === null">Unassigned</div><div v-if="blockage.Task.assignee">
+						<img v-bind:src="blockage.Task.assignee.avatarUrls['16x16']" width="16" height="16"/>{{ blockage.Task.assignee.displayName }}
+					</div></td>
 					<td data-th="Epic" ><a v-bind:href="issueURLGenerator(blockage.Epic.key)">{{ blockage.Epic.name }}</a></td>
 					<td data-th="Story"><a v-bind:href="issueURLGenerator(blockage.Story.key)">{{ blockage.Story.key }}</a></td>
 					<td data-th="Blocked Task"><a v-bind:href="issueURLGenerator(blockage.Task.key)">{{ blockage.Task.key }}</a> - {{ blockage.Task.summary }}</td>
@@ -150,11 +154,21 @@ export default {
         newBodyString += '<p>None</p>'
       }
       else {
-        newBodyString += '<table><colgroup><col /><col /><col /><col /></colgroup><tbody>'
-        newBodyString += '<tr><th>Epic</th><th>Story</th><th>Blocked Task</th><th>Actions</th></tr>'
+        newBodyString += '<table><colgroup><col /><col /><col /><col /><col /></colgroup><tbody>'
+        newBodyString += '<tr><th>Assignee</th><th>Epic</th><th>Story</th><th>Blocked Task</th><th>Actions</th></tr>'
         for (var blockageIdx in mainJIRADataStore.getters.blockages) {
           var blockage = mainJIRADataStore.getters.blockages[blockageIdx]
           newBodyString += '<tr>'
+          newBodyString += '<td>'
+          if (blockage.Task.assignee) {
+//            newBodyString += '<ac:image><ri:url ri:value="' + blockage.Task.assignee.avatarUrls['16x16'] + '" /></ac:image>'
+//            newBodyString += '<img src="' + blockage.Task.assignee.avatarUrls['16x16'] + '" width="16" height="16"/>'
+            newBodyString += blockage.Task.assignee.displayName
+          }
+          else {
+            newBodyString += 'Unassigned'
+          }
+          newBodyString += '</td>'
           newBodyString += '<td><a href="' + issueURLGenerator(blockage.Epic.key) + '">' + blockage.Epic.name + '</a></td>'
           newBodyString += '<td><a href="' + issueURLGenerator(blockage.Story.key) + '">' + blockage.Story.key + '</a></td>'
           newBodyString += '<td><a href="' + issueURLGenerator(blockage.Task.key) + '">' + blockage.Task.key + '</a> - ' + blockage.Task.summary + '</td>'
@@ -163,6 +177,7 @@ export default {
         }
         newBodyString += '</tbody></table>'
       }
+      console.log(newBodyString)
 
       var callback = {
         OKcallback: {

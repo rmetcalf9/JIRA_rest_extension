@@ -447,7 +447,8 @@ function addTasks (commit, userStoryEpicMap, callback, forGlobalState) {
                     status: issues[i].fields.status.name,
                     story_points: issues[i].fields.customfield_10004,
                     rank: issues[i].fields.customfield_11000,
-                    sprintid: getSprintID(issues[i].fields.customfield_10501, issues[i].key, passback.forGlobalState, 'Task', undefined)
+                    sprintid: getSprintID(issues[i].fields.customfield_10501, issues[i].key, passback.forGlobalState, 'Task', undefined),
+                    assignee: issues[i].fields.assignee
                   }
                 }
               }
