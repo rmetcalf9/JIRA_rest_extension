@@ -204,6 +204,12 @@ function raiseTaskExecptions (forGlobalState, task, story) {
       forGlobalState.exceptions = addException(forGlobalState.exceptions, task.key, 'Task scheduled to be delivered after story (Task ' + taskDate + ' -> Story ' + storyDate)
     }
   }
+
+  if (typeof (task.epickey) !== 'undefined') {
+    if (task.epickey !== story.epickey) {
+      forGlobalState.exceptions = addException(forGlobalState.exceptions, task.key, 'Task in different epic to associated user story (Task epicKey=' + task.epickey + ' -> Story ' + story.key + ' has epicKey=' + story.epickey + ')')
+    }
+  }
 }
 
 function raiseSprintExecptions (forGlobalState) {
@@ -417,6 +423,10 @@ function addTasks (commit, userStoryEpicMap, callback, forGlobalState) {
             passback.forGlobalState.exceptions = addException(passback.forGlobalState.exceptions, issues[i].key, 'Task without userstorykey set')
           }
           else {
+            var epickey = issues[i].fields.customfield_10800
+            if (typeof (epickey) !== 'string') {
+              epickey = undefined
+            }
             for (var j = 0; j < issues[i].fields.customfield_11101.length; j++) {
               var userStoryKey = issues[i].fields.customfield_11101[j]
               if (typeof (userStoryKey) === 'undefined') {
@@ -433,6 +443,7 @@ function addTasks (commit, userStoryEpicMap, callback, forGlobalState) {
                     key: issues[i].key,
                     summary: issues[i].fields.summary,
                     description: issues[i].fields.description,
+                    epickey: epickey,
                     status: issues[i].fields.status.name,
                     story_points: issues[i].fields.customfield_10004,
                     rank: issues[i].fields.customfield_11000,
