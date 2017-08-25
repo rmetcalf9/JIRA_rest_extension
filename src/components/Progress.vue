@@ -177,7 +177,7 @@ export default {
         }
         newBodyString += '</tbody></table>'
       }
-      console.log(newBodyString)
+      // console.log(newBodyString)
 
       var callback = {
         OKcallback: {
