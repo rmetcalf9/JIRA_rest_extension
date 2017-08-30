@@ -190,18 +190,25 @@ function raiseTaskExecptions (forGlobalState, task, story) {
   var storyDate = new Date('31-DEC-4712')
   var taskDate = new Date('31-DEC-4712')
   if (story.sprintid !== null) {
-    storyDate = truncDate(forGlobalState.sprints[story.sprintid].end)
+    // A story may have been in a sprint then moved out of a sprint to a future sprint
+    // that sprint may be closed but the story still not delivered - in this case we
+    // shouldn't consider the storyDelivary date as set
+    if (forGlobalState.sprints[story.sprintid].state !== 'CLOSED') {
+      storyDate = truncDate(forGlobalState.sprints[story.sprintid].end)
+    }
   }
   if (task.sprintid !== null) {
     taskDate = truncDate(forGlobalState.sprints[task.sprintid].end)
   }
 
   if (storyDate < taskDate) {
-    if (task.sprintid === null) {
-      forGlobalState.exceptions = addException(forGlobalState.exceptions, task.key, 'Task not in sprint but associated user story needs to be delivered on ' + storyDate)
-    }
-    else {
-      forGlobalState.exceptions = addException(forGlobalState.exceptions, task.key, 'Task scheduled to be delivered after story (Task ' + taskDate + ' -> Story ' + storyDate)
+    if (task.status !== 'Done') {
+      if (task.sprintid === null) {
+        forGlobalState.exceptions = addException(forGlobalState.exceptions, task.key, 'Task not in sprint but associated user story needs to be delivered on ' + storyDate)
+      }
+      else {
+        forGlobalState.exceptions = addException(forGlobalState.exceptions, task.key, 'Task scheduled to be delivered after story (Task ' + taskDate + ' -> Story ' + storyDate)
+      }
     }
   }
 
@@ -522,15 +529,18 @@ function getSprintID (sprintField, issueKey, forGlobalState, source, epic) {
   // Add all sprints we have found to forGlobalState
   var sprintInfo = null
   for (var key in sprintField) {
-    var sprintInfo2 = getSprintDataFromJIRAString(sprintField[key])
-    if (typeof (forGlobalState.sprints[sprintInfo2.id]) === 'undefined') forGlobalState.sprints[sprintInfo2.id] = sprintInfo2
+    var currentSprintInfo = getSprintDataFromJIRAString(sprintField[key])
+
+    if (typeof (forGlobalState.sprints[currentSprintInfo.id]) === 'undefined') forGlobalState.sprints[currentSprintInfo.id] = currentSprintInfo
     if (sprintInfo === null) {
-      sprintInfo = sprintInfo2
+      sprintInfo = currentSprintInfo
     }
     else {
-      if (sprintInfo2.start > sprintInfo.start) sprintInfo = sprintInfo2
+      // only take the date if the sprint we are looking at is active (Sometimes a story is moved from active sprint to no sprint)
+      if (currentSprintInfo.start > sprintInfo.start) sprintInfo = currentSprintInfo
     }
   }
+  if (sprintInfo === null) return null
 
   if (source === 'Task') {
     forGlobalState.sprints[sprintInfo.id].hasTasks = true

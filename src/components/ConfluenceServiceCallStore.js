@@ -76,8 +76,8 @@ const actions = {
     else {
       callPostServiceINTERNAL(store.state, params.apiPath, params.data, params.callback, store.state.authkey, params.method)
     }
-//    console.log('TODO callConfluence ' + )
-//    params.callback.OKcallback.method({msg: 'OK'}, params.callback.OKcallback.params)
+    //    console.log('TODO callConfluence ' + )
+    //    params.callback.OKcallback.method({msg: 'OK'}, params.callback.OKcallback.params)
   },
   updatePage (store, params) {
     // params.pageContentTitle -> title used to find page
@@ -164,28 +164,28 @@ function callGetServiceINTERNAL (state, URLPath, callback, authkey) {
       }
     }
   })
-  .catch(function (response) {
-    if (typeof (response.response) === 'undefined') {
-      if (typeof (response.message) === 'undefined') {
-        callback.FAILcallback.method({msg: 'Bad Response UNKNOWN', response: response}, callback.FAILcallback.params)
+    .catch(function (response) {
+      if (typeof (response.response) === 'undefined') {
+        if (typeof (response.message) === 'undefined') {
+          callback.FAILcallback.method({msg: 'Bad Response UNKNOWN', response: response}, callback.FAILcallback.params)
+        }
+        else {
+          console.log(response)
+          callback.FAILcallback.method({msg: 'Bad Response ' + response.message, response: response}, callback.FAILcallback.params)
+        }
+      }
+      else if (typeof (response.response.data) !== 'undefined') {
+        if (typeof (response.response.data.errorMessages) !== 'undefined') {
+          callback.FAILcallback.method({msg: 'Bad Response(' + response.response.data.errorMessages.length + ') ' + response.response.data.errorMessages, response: response.response}, callback.FAILcallback.params)
+        }
+        else {
+          callback.FAILcallback.method({msg: 'Data Bad Response ' + response.response.status, response: response.response}, callback.FAILcallback.params)
+        }
       }
       else {
-        console.log(response)
-        callback.FAILcallback.method({msg: 'Bad Response ' + response.message, response: response}, callback.FAILcallback.params)
+        callback.FAILcallback.method({msg: 'Nested Bad Response ' + response.response.status, response: response.response}, callback.FAILcallback.params)
       }
-    }
-    else if (typeof (response.response.data) !== 'undefined') {
-      if (typeof (response.response.data.errorMessages) !== 'undefined') {
-        callback.FAILcallback.method({msg: 'Bad Response(' + response.response.data.errorMessages.length + ') ' + response.response.data.errorMessages, response: response.response}, callback.FAILcallback.params)
-      }
-      else {
-        callback.FAILcallback.method({msg: 'Data Bad Response ' + response.response.status, response: response.response}, callback.FAILcallback.params)
-      }
-    }
-    else {
-      callback.FAILcallback.method({msg: 'Nested Bad Response ' + response.response.status, response: response.response}, callback.FAILcallback.params)
-    }
-  })
+    })
 }
 
 function callPostStyle (url, data, config, method) {
@@ -235,28 +235,28 @@ function callPostServiceINTERNAL (state, URLPath, data, callback, authkey, metho
       }
     }
   })
-  .catch(function (response) {
-    if (typeof (response.response) === 'undefined') {
-      if (typeof (response.message) === 'undefined') {
-        callback.FAILcallback.method({msg: 'Bad Response UNKNOWN', response: response}, callback.FAILcallback.params)
+    .catch(function (response) {
+      if (typeof (response.response) === 'undefined') {
+        if (typeof (response.message) === 'undefined') {
+          callback.FAILcallback.method({msg: 'Bad Response UNKNOWN', response: response}, callback.FAILcallback.params)
+        }
+        else {
+          console.log(response)
+          callback.FAILcallback.method({msg: 'Bad Response ' + response.message, response: response}, callback.FAILcallback.params)
+        }
+      }
+      else if (typeof (response.response.data) !== 'undefined') {
+        if (typeof (response.response.data.errorMessages) !== 'undefined') {
+          callback.FAILcallback.method({msg: 'Bad Response(' + response.response.data.errorMessages.length + ') ' + response.response.data.errorMessages, response: response.response}, callback.FAILcallback.params)
+        }
+        else {
+          callback.FAILcallback.method({msg: 'Data Bad Response ' + response.response.status, response: response.response}, callback.FAILcallback.params)
+        }
       }
       else {
-        console.log(response)
-        callback.FAILcallback.method({msg: 'Bad Response ' + response.message, response: response}, callback.FAILcallback.params)
+        callback.FAILcallback.method({msg: 'Nested Bad Response ' + response.response.status, response: response.response}, callback.FAILcallback.params)
       }
-    }
-    else if (typeof (response.response.data) !== 'undefined') {
-      if (typeof (response.response.data.errorMessages) !== 'undefined') {
-        callback.FAILcallback.method({msg: 'Bad Response(' + response.response.data.errorMessages.length + ') ' + response.response.data.errorMessages, response: response.response}, callback.FAILcallback.params)
-      }
-      else {
-        callback.FAILcallback.method({msg: 'Data Bad Response ' + response.response.status, response: response.response}, callback.FAILcallback.params)
-      }
-    }
-    else {
-      callback.FAILcallback.method({msg: 'Nested Bad Response ' + response.response.status, response: response.response}, callback.FAILcallback.params)
-    }
-  })
+    })
 }
 
 Vue.use(Vuex)
