@@ -1,67 +1,118 @@
 <template>
-  <q-layout>
-    <div slot="header" class="toolbar">
-      <!-- opens drawer below -->
-      <button class="hide-on-drawer-visible" @click="$refs.drawer.open()">
-        <i>menu</i>
-      </button>
-      <button v-if="backroute !== ''" v-go-back.single="backroute" class="within-iframe-hide">
-        <i>arrow_back</i>
-      </button>
-      
-      <q-toolbar-title :padding="1">
+  <q-layout
+    ref="layout"
+    :view="layoutStore.view"
+    :left-breakpoint="layoutStore.leftBreakpoint"
+    :reveal="layoutStore.reveal"
+  >
+    <q-toolbar slot="header">
+      <q-btn flat @click="$refs.layout.toggleLeft()">
+        <q-icon name="menu" />
+      </q-btn>
+      <q-btn v-if="backroute !== ''" class="within-iframe-hide" flat @click="$router.replace(backroute)" style="margin-right: 15px">
+        <q-icon name="keyboard_arrow_left" />
+      </q-btn>
+      <q-toolbar-title>
         {{ pageTitle }}
+        <span slot="subtitle">Empowering your app</span>
       </q-toolbar-title>
-
-      <button @click="refresh">
+      <q-btn flat @click="refresh">
         Refresh
-      </button>
+      </q-btn>
 
-	  </div>
+    </q-toolbar>
 
-    <!-- Drawer -->
-    <q-drawer ref="drawer">
-      <div class="toolbar light">
-        <q-toolbar-title>
-          Navigation
-        </q-toolbar-title>
-      </div>
+    <q-scroll-area slot="left" style="width: 100%; height: 100%">
+      <q-list-header>Navigation</q-list-header>
 
-      <div class="list no-border platform-delimiter">
-        <q-drawer-link icon="home" :to="{path: '/', exact: true}">Home</q-drawer-link>
-        <q-drawer-link icon="directions_run" :to="{path: '/sprints', exact: true}">Sprints</q-drawer-link>
-        <q-drawer-link icon="pie_chart" :to="{path: '/progress', exact: true}">Progress</q-drawer-link>
-        <q-drawer-link icon="bug_report" :to="{path: '/exceptions', exact: true}" v-if="numexceptions === 0">Exceptions</q-drawer-link>
-        <q-drawer-link icon="bug_report" :to="{path: '/exceptions', exact: true}" v-if="numexceptions !== 0"><b>Exceptions ({{ numexceptions }})</b></q-drawer-link>
-		<hr>
-        <q-drawer-link icon="group_work" :to="{path: '/test', exact: true}">TEST2</q-drawer-link>
-		<hr>
-        <q-drawer-link icon="find_replace" :to="{path: '/changeproject', exact: true}">Change Project</q-drawer-link>
-        <q-drawer-link icon="exit_to_app" :to="{path: '/logout', exact: true}">Logout</q-drawer-link>
-		
-      </div>
-    </q-drawer>
-    
+      <q-side-link item to="/home">
+        <q-item-side icon="home" />
+        <q-item-main label="Home" />
+      </q-side-link>
+      <q-side-link item to="/sprints">
+        <q-item-side icon="directions_run" />
+        <q-item-main label="Sprints" />
+      </q-side-link>
+      <q-side-link item to="/progress">
+        <q-item-side icon="pie_chart" />
+        <q-item-main label="Progress" />
+      </q-side-link>
+      <q-side-link item to="/exceptions" v-if="numexceptions === 0">
+        <q-item-side icon="bug_report" />
+        <q-item-main label="Exceptions" />
+      </q-side-link>
+      <q-side-link item to="/exceptions" v-if="numexceptions !== 0">
+        <q-item-side icon="bug_report" />
+        <q-item-main v-bind:label="'<b>Exceptions (' + numexceptions + ')</b>'" />
+      </q-side-link>
+      <hr>
+      <q-side-link item to="/test">
+        <q-item-side icon="group_work" />
+        <q-item-main label="TEST2" />
+      </q-side-link>
+      <hr>
+      <q-side-link item to="/changeproject">
+        <q-item-side icon="find_replace" />
+        <q-item-main label="Change Project" />
+      </q-side-link>
+      <q-side-link item to="/logout">
+        <q-item-side icon="exit_to_app" />
+        <q-item-main label="Logout" />
+      </q-side-link>
 
-    <router-view class="layout-view"></router-view>
+    </q-scroll-area>
 
-    <!-- Footer -->
-    <div slot="footer" class="toolbar"></div>
-    
+    <router-view />
 
+    <q-toolbar slot="footer">
+      <!--<q-toolbar-title>
+        Footer
+      </q-toolbar-title>-->
+    </q-toolbar>
   </q-layout>
 </template>
 
 <script>
-// import strings from './strings'
+import {
+  QLayout,
+  QToolbar,
+  QToolbarTitle,
+  QSearch,
+  QTabs,
+  QRouteTab,
+  QBtn,
+  QIcon,
+  QItemSide,
+  QItemMain,
+  QSideLink,
+  QListHeader,
+  QScrollArea,
+  Loading,
+  Toast
+} from 'quasar'
 import globalStore from './globalStore'
 import mainJIRADataStore from './mainJIRADataStore'
-import { Loading, Toast } from 'quasar'
 
 export default {
+  components: {
+    QLayout,
+    QToolbar,
+    QToolbarTitle,
+    QSearch,
+    QTabs,
+    QRouteTab,
+    QBtn,
+    QIcon,
+    QItemSide,
+    QItemMain,
+    QSideLink,
+    QListHeader,
+    QScrollArea
+  },
   data () {
     return {
-      // app_strings: strings.app
+      layoutStore: {
+      }
     }
   },
   computed: {
@@ -128,17 +179,3 @@ export default {
   }
 }
 </script>
-
-<style lang="stylus">
-.logo-container
-  width 192px
-  height 268px
-  perspective 800px
-  position absolute
-  top 50%
-  left 50%
-  transform translateX(-50%) translateY(-50%)
-.logo
-  position absolute
-  transform-style preserve-3d
-</style>

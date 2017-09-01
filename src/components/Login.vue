@@ -1,21 +1,26 @@
 <template>
-  <q-layout>
-    <div slot="header" class="toolbar">
-      <q-toolbar-title :padding="0">
+  <q-layout
+    ref="layout"
+    view="lHh Lpr fff"
+    :left-class="{'bg-grey-2': true}"
+  >
+    <q-toolbar slot="header" class="glossy">
+      <q-toolbar-title>
         {{ pageTitle }}
+        <div slot="subtitle">Running on Quasar v{{$q.version}}</div>
       </q-toolbar-title>
-    </div>
+    </q-toolbar>
 
-    <div class="layout-view">
-        <div class="text-center">
+    <div class="layout-padding  docs-btn row justify-center">
+        <div class="text-center" style="width: 500px; max-width: 90vw;">
 			<br>
 			<form onClick="return false;">
     	    <p class="caption">Please Login:</p>
-    	    <input v-model="username" placeholder="Username">
+    	    <q-input v-model="username" placeholder="Username" />
     	    <br>
-    	    <input type="password" v-model="password" placeholder="Password">
+    	    <q-input type="password" v-model="password" placeholder="Password" />
 			<br>
-			<button class="primary small" @click="login">Login</button>
+			<q-btn color="primary" @click="login" small>Login</q-btn>
 			</form>
         </div>
     </div>
@@ -23,10 +28,49 @@
 </template>
 
 <script>
-import { Toast, Loading } from 'quasar'
+import {
+  QField,
+  QToggle,
+  QLayout,
+  QToolbar,
+  QToolbarTitle,
+  QBtn,
+  QIcon,
+  QList,
+  QInput,
+  QOptionGroup,
+  QSelect,
+  QListHeader,
+  QItem,
+  QItemSide,
+  QChipsInput,
+  QRating,
+  QItemMain,
+  Toast,
+  Loading
+} from 'quasar'
 import globalStore from './globalStore'
 
 export default {
+  components: {
+    QField,
+    QToggle,
+    QOptionGroup,
+    QSelect,
+    QChipsInput,
+    QRating,
+    QLayout,
+    QToolbar,
+    QToolbarTitle,
+    QBtn,
+    QIcon,
+    QList,
+    QListHeader,
+    QItem,
+    QItemSide,
+    QItemMain,
+    QInput
+  },
   data () {
     return {
       username: '',
@@ -66,11 +110,9 @@ export default {
       }
       globalStore.dispatch('loginuser', params)
     }
-  },
-  created () {
   }
 }
 </script>
 
-<style>
+<style lang="stylus">
 </style>

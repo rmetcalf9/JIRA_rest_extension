@@ -30,7 +30,6 @@ const actions = {
     var authToken = btoa(params.username + ':' + params.password)
     JIRAServiceCallStore.dispatch('setAuthKey', {authToken: 'Basic ' + authToken, callback: params.callback})
     ConfluenceServiceCallStore.dispatch('setAuthKey', {authToken: 'Basic ' + authToken, callback: params.callback})
-    //  callJIRAstore.getters.calljira.setAuthKey('Basic ' + authToken, params.callback)
   }
 }
 

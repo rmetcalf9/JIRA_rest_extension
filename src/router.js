@@ -5,7 +5,8 @@ import globalStore from './components/globalStore'
 Vue.use(VueRouter)
 
 function load (component) {
-  return () => System.import(`components/${component}.vue`)
+  // '@' is aliased to src/components
+  return () => import(`@/${component}.vue`)
 }
 
 function defaultBeforeNavFn (to, from, next, pageTitle) {
@@ -52,7 +53,8 @@ export default new VueRouter({
       component: load('Index'),
       beforeEnter: requireAuth,
       children: [
-        { path: '', component: load('DetailedProgress'), beforeEnter (to, from, next) { defaultBeforeNavFn(to, from, next, 'Home') } },
+        { path: '/', redirect: '/home' },
+        { path: 'home', component: load('DetailedProgress'), beforeEnter (to, from, next) { defaultBeforeNavFn(to, from, next, 'Home') } },
         { path: 'exceptions', component: load('Exceptions'), beforeEnter (to, from, next) { defaultBeforeNavFn(to, from, next, 'Exceptions') } },
         { path: 'sprints', component: load('Sprints'), beforeEnter (to, from, next) { defaultBeforeNavFn(to, from, next, 'Sprints') } },
         { path: 'sprints/:sprintID', component: load('DetailedProgress'), beforeEnter (to, from, next) { defaultBeforeNavFn(to, from, next, 'Sprint ' + to.params.sprintID) } },
@@ -62,6 +64,7 @@ export default new VueRouter({
       ]
     },
     { path: '/login', component: load('Login'), beforeEnter (to, from, next) { defaultBeforeNavFn(to, from, next, 'Login') } },
+    { path: '/loginTEST', component: load('LoginTEST'), beforeEnter (to, from, next) { defaultBeforeNavFn(to, from, next, 'Login') } },
     { path: '/logout',
       beforeEnter (to, from, next) {
         globalStore.commit('LOGOUT')

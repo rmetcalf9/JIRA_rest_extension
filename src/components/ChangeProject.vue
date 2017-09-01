@@ -1,8 +1,10 @@
 <template>
   <div>
     <h2>Change current project</h2>
-    Enter project Keys: <q-chips v-model="selectedProjects" placeholder="Project keys"></q-chips>
-    <button class="primary small" @click="save">Save</button>
+    Enter project Keys: <q-chips-input v-model="selectedProjects" float-label="Project keys"></q-chips-input>
+    <q-btn @click="save" color="primary">
+      Save
+    </q-btn>
     <h3>Projects</h3>
     <table style="margin-top: 30px;" class="q-table bordered striped-odd">
       <thead>
@@ -24,9 +26,18 @@
 <script>
 import mainJIRADataStore from './mainJIRADataStore'
 import projectJIRADataStore from './projectJIRADataStore'
-import { Loading, Toast } from 'quasar'
+import {
+  QChipsInput,
+  QBtn,
+  Loading,
+  Toast
+} from 'quasar'
 
 export default {
+  components: {
+    QChipsInput,
+    QBtn
+  },
   data () {
     return {
       selectedProjects: []
@@ -75,7 +86,8 @@ export default {
   },
   created () {
     Loading.show()
-    this.$data.selectedProjects = mainJIRADataStore.getters.srcJiraData.epicProjects
+    // slice needed to make sure we copy the array values and don't end up with a reference to the origional object
+    this.$data.selectedProjects = mainJIRADataStore.getters.srcJiraData.epicProjects.slice()
     var callback = {
       OKcallback: {
         method: function (retData, passback) {

@@ -51,7 +51,9 @@
 			</tbody>
 		</table>
 		<hr>
-		<button class="primary small" @click="copy">Update page in confluence</button>
+		<q-btn @click="copy" color="primary">
+			Update page in confluence
+		</q-btn>
 		 <a v-if="(confluencePageContentTitle !== '')" v-bind:href="'https://wiki.imperial.ac.uk/display/IED/' + confluencePageContentTitle">View in Confluence</a>
   </div>
 </template>
@@ -60,7 +62,10 @@
 import JIRAServiceCallStore from './JIRAServiceCallStore'
 import mainJIRADataStore from './mainJIRADataStore'
 import confluenceServiceCallStore from './ConfluenceServiceCallStore'
-import { Toast } from 'quasar'
+import {
+  QBtn,
+  Toast
+} from 'quasar'
 
 function zeroPad (num, places) {
   var zero = places - num.toString().length + 1
@@ -68,6 +73,9 @@ function zeroPad (num, places) {
 }
 
 export default {
+  components: {
+    QBtn
+  },
   data () {
     return {
     }
@@ -161,8 +169,6 @@ export default {
           newBodyString += '<tr>'
           newBodyString += '<td>'
           if (blockage.Task.assignee) {
-//            newBodyString += '<ac:image><ri:url ri:value="' + blockage.Task.assignee.avatarUrls['16x16'] + '" /></ac:image>'
-//            newBodyString += '<img src="' + blockage.Task.assignee.avatarUrls['16x16'] + '" width="16" height="16"/>'
             newBodyString += blockage.Task.assignee.displayName
           }
           else {

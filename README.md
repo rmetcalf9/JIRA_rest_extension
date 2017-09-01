@@ -2,19 +2,6 @@
 
 > A Quasar project
 
-## JIRA API Details
-https://developer.atlassian.com/jiradev/jira-apis
-
-## Quasar links
-Showcase: http://quasar-framework.org/quasar-play/android/index.html#/showcase/
-Showcase source: https://github.com/quasarframework/quasar-play/tree/dev/src/components/showcase
-Icons: https://material.io/icons/
-
-## Host
-Not working due to SSL issues
-https://rmetcalf9.github.io/JIRA_rest_extension/index.html
-
-
 ## Build Setup
 
 ``` bash
@@ -30,50 +17,3 @@ $ quasar build
 # lint code
 $ quasar lint
 ```
-
-
-# Callback structure
-```
-var callback = {
-  OKcallback: {
-    method: function (retData, passback) {
-      commit('COMPLETED_LOADING')
-    },
-    params: {}
-  },
-  FAILcallback: {
-    method: function (retData, passback) {
-      commit('ERRORED_LOADING')
-    },
-    params: {}
-  }
-}
-```
-Usage
-```
-callBack.OKcallback.method(retData, callBack.OKcallback.params)
-callBack.FAILcallback.method(retData, callBack.FAILcallback.params)
-```
-
-Pass through callBack
-```
-    var callbackPassthrough = {
-      OKcallback: {
-        method: function (retData, passback) {
-          passback.OKcallback.method(retData, passback.OKcallback.params)
-        },
-        params: callback
-      },
-      FAILcallback: {
-        method: function (retData, passback) {
-          passback.FAILcallback.method(retData, passback.FAILcallback.params)
-        },
-        params: callback
-      }
-    }
-```
-
-
-# Vue modules
-
-npm install vue-clipboard

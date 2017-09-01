@@ -278,8 +278,9 @@ const getters = {
 const actions = {
   setSelectedProjects (store, params) {
     // Will set the selected projects
-    if (jqlArgumentUtils.joinStringArray(state.srcJiraData.epicProjects) === jqlArgumentUtils.joinStringArray(params.projects)) {
+    if (jqlArgumentUtils.joinStringArray(store.state.srcJiraData.epicProjects) === jqlArgumentUtils.joinStringArray(params.projects)) {
       params.callback.OKcallback.method({msg: 'OK'}, params.callback.OKcallback.params)
+      console.log('mainJIRADataSTore setSelectedProjects - new value same as origional (' + jqlArgumentUtils.joinStringArray(params.projects) + '===' + jqlArgumentUtils.joinStringArray(store.state.srcJiraData.epicProjects) + ')')
       return
     }
 

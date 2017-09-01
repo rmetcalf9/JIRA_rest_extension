@@ -1,46 +1,79 @@
 <template>
   <div>
-  
 	<h2 v-if="typeof(sprint) === 'undefined'">Project Progress - {{ totals.progressPercantage }}%</h2>
 	<h2 v-if="typeof(sprint) !== 'undefined'">{{ sprint.name }} Progress - {{ totals.progressPercantage }}%</h2>
 	<br>
-	<div class="card" v-for="(epic2, key) in epics" :key="epic2.key">
-	<div class="card-title bg-primary text-white">
+    <q-card v-for="(epic2, key) in epics" :key="epic2.key">
+	  <q-card-title class="card-title bg-primary text-white">
 	  {{ totals.epicPercentage[epic2.key] }}% -  {{ epic2.name }}
-	</div>
-      <div class="list">
-        <div v-for="userStory in epic2.user_stories" :key="userStory.key" v-bind:style="(userStory.completed) ? 'color: green' : ''" v-if="(typeof(sprint) === 'undefined') || (sprintid === userStory.sprintid)">
-          <q-collapsible icon="group" :label="userStory.label_text">
-            <div class="item has-secondary" v-for="task in userStory.tasks" :key="task.key" v-if="task.status !== 'Done'">
-              <i class="item-primary">check_box_outline_blank</i>
-              <div class="item-content">
-                {{ task.key }} ({{ task.status }}) - {{ task.summary }}
-              </div>
-              <div class="item-secondary">{{ task.story_points }}</div>
-            </div> 
-            <div class="item has-secondary" v-for="task in userStory.tasks" :key="task.key" v-if="task.status === 'Done'">
-              <i class="item-primary">check_box</i>
-              <div class="item-content">
-                {{ task.key }} ({{ task.status }}) - {{ task.summary }}
-              </div>
-              <div class="item-secondary text-italic" style="text-decoration: line-through;">{{ task.story_points }}</div>
-            </div>
-          </q-collapsible>
-        </div>
-      </div> 
-    </div>
+	  </q-card-title>
+	  <q-list>
+	    <q-item v-for="userStory in epic2.user_stories" :key="userStory.key">
+		  <q-item-main>
+		    <q-collapsible v-bind:label="userStory.label_text" v-bind:style="(userStory.completed) ? 'color: green' : ''" v-if="(typeof(sprint) === 'undefined') || (sprintid === userStory.sprintid)">
+			<div>
+			  <q-list>
+			    <q-item v-for="task in userStory.tasks" :key="task.key" v-if="task.status !== 'Done'">
+				  <q-item-side>
+				    <q-item-tile icon="check_box_outline_blank" />
+				  </q-item-side>
+				  <q-item-main>
+			        {{ task.key }} ({{ task.status }}) - {{ task.summary }}
+				  </q-item-main>
+			    </q-item>
+			    <q-item v-for="task in userStory.tasks" :key="task.key" v-if="task.status === 'Done'">
+				  <q-item-side>
+				    <q-item-tile icon="check_box" />
+				  </q-item-side>
+				  <q-item-main>
+			        {{ task.key }} ({{ task.status }}) - {{ task.summary }}
+				  </q-item-main>
+			    </q-item>
+			  </q-list>
+			</div>
+			</q-collapsible>
+		  </q-item-main>
+		</q-item>
+	  </q-list>
+    </q-card>
+  
 	<p v-if="typeof(sprint) !== 'undefined'">
 	{{ totals.totalBurnedPoints }} out of {{ totals.totalPoints }} points have been burned = {{ totals.progressPercantage }}%
 	</p>
-	</div>
+  </div>
 </template>
 
 <script>
+import {
+  QCard,
+  QCardTitle,
+  QBtn,
+  QIcon,
+  QList,
+  QItem,
+  QItemMain,
+  QItemTile,
+  QCollapsible,
+  QItemSide
+} from 'quasar'
 import mainJIRADataStore from './mainJIRADataStore'
 
 export default {
+  components: {
+    QCard,
+    QCardTitle,
+    QBtn,
+    QIcon,
+    QList,
+    QItem,
+    QItemMain,
+    QItemTile,
+    QCollapsible,
+    QItemSide
+  },
   data () {
-    return {}
+    return {
+    }
   },
   computed: {
     sprintid () {
@@ -99,10 +132,9 @@ export default {
       ret.totalBurnedPoints = burnedPointsSprint
       return ret
     }
-
   }
 }
 </script>
 
-<style>
+<style lang="stylus">
 </style>
