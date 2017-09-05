@@ -10,7 +10,7 @@
 			</thead>
 			<tbody>
 				<tr v-for="exception in exceptions">
-					<td data-th="Issue" class="text-left">{{ exception.key }}</td>
+					<td data-th="Issue" class="text-left"><a v-bind:href="issueURLGenerator(exception.key)" target="_new">{{ exception.key }}</a></td>
 					<td data-th="Message" class="text-left">{{ exception.msg }}</td>
 				</tr>
 			</tbody>
@@ -20,6 +20,7 @@
 
 <script>
 import mainJIRADataStore from './mainJIRADataStore'
+import JIRAServiceCallStore from './JIRAServiceCallStore'
 
 export default {
   data () {
@@ -27,6 +28,9 @@ export default {
     }
   },
   computed: {
+    issueURLGenerator () {
+      return JIRAServiceCallStore.getters.getIssueURLGenerator
+    },
     epic_data () {
       return mainJIRADataStore.state.tmp
     },
