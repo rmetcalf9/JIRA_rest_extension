@@ -185,6 +185,13 @@ function truncDate (date) {
   return new Date(padWithLeadingZero(date.getDate(), 2) + ' ' + monthNames[date.getMonth()] + ' ' + padWithLeadingZero(date.getFullYear(), 4))
 }
 
+function getEpicString (forGlobalState, epicKey) {
+  if (typeof (epicKey) === 'undefined') {
+    return 'Undefined'
+  }
+  return forGlobalState.epics[epicKey].name
+}
+
 // Raises task exceptions. (Invalid story exceptions raised during initial task load)
 function raiseTaskExecptions (forGlobalState, task, story) {
   var storyDate = new Date('31-DEC-4712')
@@ -201,6 +208,20 @@ function raiseTaskExecptions (forGlobalState, task, story) {
     taskDate = truncDate(forGlobalState.sprints[task.sprintid].end)
   }
 
+  // Find tasks who's epic dosen't match the user story epic
+  var storyEpicKeyText = getEpicString(forGlobalState, story.epickey)
+  var taskEpicKeyText = getEpicString(forGlobalState, task.epickey)
+  if (typeof (task.epickey) === 'undefined') {
+    forGlobalState.exceptions = addException(forGlobalState.exceptions, task.key, 'Task has no epic set (Story epic is ' + storyEpicKeyText + ')')
+  }
+  else {
+    if (task.epickey !== story.epickey) {
+      forGlobalState.exceptions = addException(forGlobalState.exceptions, task.key, 'Task is not in same epic as story (Task is ' + taskEpicKeyText + ', story is  ' + storyEpicKeyText + ')')
+      console.log(task.epickey)
+      console.log(story.epickey)
+    }
+  }
+
   if (storyDate < taskDate) {
     if (task.status !== 'Done') {
       if (task.sprintid === null) {
@@ -209,12 +230,6 @@ function raiseTaskExecptions (forGlobalState, task, story) {
       else {
         forGlobalState.exceptions = addException(forGlobalState.exceptions, task.key, 'Task scheduled to be delivered after story (Task ' + taskDate + ' -> Story ' + storyDate)
       }
-    }
-  }
-
-  if (typeof (task.epickey) !== 'undefined') {
-    if (task.epickey !== story.epickey) {
-      forGlobalState.exceptions = addException(forGlobalState.exceptions, task.key, 'Task in different epic to associated user story (Task epicKey=' + task.epickey + ' -> Story ' + story.key + ' has epicKey=' + story.epickey + ')')
     }
   }
 }
