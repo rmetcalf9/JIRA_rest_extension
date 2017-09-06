@@ -6,6 +6,7 @@ import axios from 'axios'
 
 const state = {
   corsproxyprefix: 'http://cc-rjmetcal.ic.ac.uk:1337/',
+  // host: 'icwiki1-test.cc.ic.ac.uk', // DEV imperial host
   host: 'wiki.imperial.ac.uk',
   authkey: ''
 }
@@ -22,6 +23,9 @@ const mutations = {
 const getters = {
   isAuthKeySet: (state, getters) => {
     return state.authkey !== ''
+  },
+  host: (state, getters) => {
+    return state.host
   }
 }
 

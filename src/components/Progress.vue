@@ -54,7 +54,7 @@
 		<q-btn @click="copy" color="primary">
 			Update page in confluence
 		</q-btn>
-		 <a v-if="(confluencePageContentTitle !== '')" v-bind:href="'https://wiki.imperial.ac.uk/display/IED/' + confluencePageContentTitle">View in Confluence</a>
+		 <a v-if="(confluencePageContentTitle !== '')" v-bind:href="'https://' + confluenceHost + '/display/IED/' + confluencePageContentTitle">View in Confluence</a>
   </div>
 </template>
 
@@ -81,6 +81,9 @@ export default {
     }
   },
   computed: {
+    confluenceHost () {
+      return confluenceServiceCallStore.getters.host
+    },
     issueURLGenerator () {
       return JIRAServiceCallStore.getters.getIssueURLGenerator
     },
@@ -118,7 +121,6 @@ export default {
         Toast.create('Only works when single project is selected')
         return
       }
-      console.log(this)
       var pageContentTitle = this.confluencePageContentTitle
       if (pageContentTitle === '') {
         Toast.create('No confluence location for this project')
