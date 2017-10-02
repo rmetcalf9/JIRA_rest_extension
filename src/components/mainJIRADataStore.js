@@ -385,7 +385,11 @@ function addUserStories (commit, forGlobalState, callback) {
             var userStorykey = issues[i].key
             var storyPoints = 0
             if (issues[i].fields.customfield_10004 == null) {
-              passback.forGlobalState.exceptions = addException(passback.forGlobalState.exceptions, issues[i].key, 'User Story without estimate')
+              if (issues[i].fields.status.name !== 'Open') {
+                if (issues[i].fields.status.name !== 'Done Criteria Established') {
+                  passback.forGlobalState.exceptions = addException(passback.forGlobalState.exceptions, issues[i].key, 'User Story without estimate (Status: ' + issues[i].fields.status.name + ')')
+                }
+              }
             }
             else {
               storyPoints = issues[i].fields.customfield_10004
