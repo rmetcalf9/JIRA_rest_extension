@@ -8,9 +8,9 @@
 	  {{ totals.epicPercentage[epic2.key] }}% -  {{ epic2.name }}
 	  </q-card-title>
 	  <q-list>
-	    <q-item v-for="userStory in epic2.user_stories" :key="userStory.key">
+	    <q-item v-for="userStory in epic2.user_stories" :key="userStory.key" v-if="(typeof(sprint) === 'undefined') || (sprintid === userStory.sprintid)">
 		  <q-item-main>
-		    <q-collapsible v-bind:label="userStory.label_text" v-bind:style="(userStory.completed) ? 'color: green' : ''" v-if="(typeof(sprint) === 'undefined') || (sprintid === userStory.sprintid)">
+		    <q-collapsible v-bind:label="userStory.label_text" v-bind:style="(userStory.completed) ? 'color: green' : ''" >
 			<div>
 			  <q-list>
 			    <q-item v-for="task in userStory.tasks" :key="task.key" v-if="task.status !== 'Done'">
