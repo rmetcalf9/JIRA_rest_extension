@@ -8,6 +8,10 @@
 					<th class="text-left">Stories</th>
 					<th class="text-left">Points</th>
 					<th class="text-left">Progress</th>
+					<th class="text-left">Bugs Pending</th>
+					<th class="text-left">In Progress</th>
+					<th class="text-left">Blocked</th>
+					<th class="text-left">Resolved</th>
 				</tr>
 			</thead>
 			<tbody>
@@ -17,6 +21,10 @@
 					<td data-th="Points" class="text-right">{{ epic.summedBurnedStoryPoints }}/{{ epic.summedStoryPoints }}</td>
 					<td data-th="Progress" class="text-right" v-if="epic.summedStoryPoints !== 0">{{ Math.round(100 * (epic.summedBurnedStoryPoints / epic.summedStoryPoints)) }}%</td>
 					<td data-th="Progress" class="text-right" v-if="epic.summedStoryPoints == 0">0%</td>
+					<td data-th="Bugs Pending" class="text-right">{{ epic.bugs.totalReported }}</td>
+					<td data-th="Bugs In Progress" class="text-right">{{ epic.bugs.totalInProgress }}</td>
+					<td data-th="Bugs Blocked" class="text-right">{{ epic.bugs.totalBlocked }}</td>
+					<td data-th="Bugs Resolved" class="text-right">{{ epic.bugs.totalResolved }}</td>
 				</tr>
 			</tbody>
 			<thead>
@@ -25,6 +33,10 @@
 					<td class="text-right">{{ project.numUserStories }}</td>
 					<td class="text-right">{{ project.numBurnedPoints }}/{{ project.numPoints }}</td>
 					<td class="text-right">{{ project.progressPercantage }}%</td>
+					<td class="text-right">{{ project.bugsPending }}</td>
+					<td class="text-right">{{ project.bugsInProgress }}</td>
+					<td class="text-right">{{ project.bugsBlocked }}</td>
+					<td class="text-right">{{ project.bugsResolved }}</td>
 				</tr>
 			</thead>
 		</table>
@@ -45,7 +57,10 @@
 						<img v-bind:src="blockage.Task.assignee.avatarUrls['16x16']" width="16" height="16"/>{{ blockage.Task.assignee.displayName }}
 					</div></td>
 					<td data-th="Epic" ><a v-bind:href="issueURLGenerator(blockage.Epic.key)">{{ blockage.Epic.name }}</a></td>
-					<td data-th="Story"><a v-bind:href="issueURLGenerator(blockage.Story.key)">{{ blockage.Story.key }}</a></td>
+					<td data-th="Story">
+						<div v-if="blockage.Story.key === 'BUG'">Bug</div>
+						<a v-if="blockage.Story.key !== 'BUG'" v-bind:href="issueURLGenerator(blockage.Story.key)">{{ blockage.Story.key }}</a>
+					</td>
 					<td data-th="Blocked Task"><a v-bind:href="issueURLGenerator(blockage.Task.key)">{{ blockage.Task.key }}</a> - {{ blockage.Task.summary }}</td>
 				</tr>
 			</tbody>
@@ -136,7 +151,17 @@ export default {
       var time = zeroPad(now.getHours(), 2) + ':' + zeroPad(now.getMinutes(), 2) + ':' + zeroPad(now.getSeconds(), 2)
       var dateTime = date + ' ' + time
 
-      newBodyString += '<p>Update ' + dateTime + '</p><div class="table-wrap"><table class="wrapped confluenceTable"><colgroup><col/><col/><col/><col/></colgroup><tbody><tr><th class="confluenceTh">Epic</th><th class="confluenceTh">Stories</th><th class="confluenceTh">Points</th><th class="confluenceTh">Progress</th></tr>'
+      newBodyString += '<p>Update ' + dateTime + '</p><div class="table-wrap"><table class="wrapped confluenceTable"><colgroup><col/><col/><col/><col/></colgroup><tbody>'
+      newBodyString += '<tr>'
+      newBodyString += '<th class="confluenceTh">Epic</th>'
+      newBodyString += '<th class="confluenceTh">Stories</th>'
+      newBodyString += '<th class="confluenceTh">Points</th>'
+      newBodyString += '<th class="confluenceTh">Progress</th>'
+      newBodyString += '<th class="confluenceTh">Bugs Pending</th>'
+      newBodyString += '<th class="confluenceTh">In Progress</th>'
+      newBodyString += '<th class="confluenceTh">Blocked</th>'
+      newBodyString += '<th class="confluenceTh">Resolved</th>'
+      newBodyString += '</tr>'
 
       for (var epicIdx in mainJIRADataStore.getters.epics) {
         var epic = mainJIRADataStore.getters.epics[epicIdx]
@@ -150,12 +175,23 @@ export default {
         else {
           newBodyString += '<td style="text-align: right;">0%</td>'
         }
+        newBodyString += '<td style="text-align: right;">' + epic.bugs.totalReported + '</td>'
+        newBodyString += '<td style="text-align: right;">' + epic.bugs.totalInProgress + '</td>'
+        newBodyString += '<td style="text-align: right;">' + epic.bugs.totalBlocked + '</td>'
+        newBodyString += '<td style="text-align: right;">' + epic.bugs.totalResolved + '</td>'
+
         newBodyString += '</tr>'
       }
       newBodyString += '<tr><td>&nbsp;</td>'
       newBodyString += '<td style="text-align: right;"><strong>' + mainJIRADataStore.getters.project.numUserStories + '</strong></td>'
       newBodyString += '<td style="text-align: right;"><strong>' + mainJIRADataStore.getters.project.numBurnedPoints + '/' + mainJIRADataStore.getters.project.numPoints + '</strong></td>'
       newBodyString += '<td style="text-align: right;"><strong>' + mainJIRADataStore.getters.project.progressPercantage + '%</strong></td>'
+
+      newBodyString += '<td style="text-align: right;"><strong>' + mainJIRADataStore.getters.project.bugsPending + '</strong></td>'
+      newBodyString += '<td style="text-align: right;"><strong>' + mainJIRADataStore.getters.project.bugsInProgress + '</strong></td>'
+      newBodyString += '<td style="text-align: right;"><strong>' + mainJIRADataStore.getters.project.bugsBlocked + '</strong></td>'
+      newBodyString += '<td style="text-align: right;"><strong>' + mainJIRADataStore.getters.project.bugsResolved + '</strong></td>'
+
       newBodyString += '</tr>'
       newBodyString += '</tbody></table></div>'
 
@@ -178,7 +214,12 @@ export default {
           }
           newBodyString += '</td>'
           newBodyString += '<td><a href="' + issueURLGenerator(blockage.Epic.key) + '">' + blockage.Epic.name + '</a></td>'
-          newBodyString += '<td><a href="' + issueURLGenerator(blockage.Story.key) + '">' + blockage.Story.key + '</a></td>'
+          if (blockage.Story.key === 'BUG') {
+            newBodyString += '<td>Bug</td>'
+          }
+          else {
+            newBodyString += '<td><a href="' + issueURLGenerator(blockage.Story.key) + '">' + blockage.Story.key + '</a></td>'
+          }
           newBodyString += '<td><a href="' + issueURLGenerator(blockage.Task.key) + '">' + blockage.Task.key + '</a> - ' + blockage.Task.summary + '</td>'
           newBodyString += '<td>&nbsp;</td>'
           newBodyString += '</tr>'

@@ -15,7 +15,11 @@ const state = {
     numUserStories: 0,
     numPoints: 0,
     numBurnedPoints: 0,
-    sprints: {}
+    sprints: {},
+    bugsPending: 0,
+    bugsInProgress: 0,
+    bugsBlocked: 0,
+    bugsResolved: 0
   },
   srcJiraData: {
     epicProjects: ['SPI'],
@@ -40,6 +44,11 @@ const mutations = {
     var epics = params.forGlobalState.epics
     var projectSummedTaskStoryPoints = 0
     var projectSummedTaskBurnedStoryPoints = 0
+    var projectSummedbugsPending = 0
+    var projectSummedbugsInProgress = 0
+    var projectSummedbugsBlocked = 0
+    var projectSummedbugsResolved = 0
+
     var numUserStoriesInThisProject = 0
 
     for (var epic in epics) {
@@ -76,7 +85,9 @@ const mutations = {
             newTasks.push(epics[epic].user_stories[userstory].tasks[task])
           }
           if (numEstimatedTasks !== numTasks) {
-            params.forGlobalState.exceptions = addException(params.forGlobalState.exceptions, epics[epic].user_stories[userstory].key, 'Story with some but not all Tasks estimated')
+            if (us.sprintid !== null) {
+              params.forGlobalState.exceptions = addException(params.forGlobalState.exceptions, epics[epic].user_stories[userstory].key, 'Story in Sprint with some but not all Tasks estimated')
+            }
           }
           if (numTasks === 0) {
             summedTaskStoryPoints = null
@@ -136,20 +147,49 @@ const mutations = {
         epics[epic].user_stories = newUserStories
 
         // Add bugs to this epic
-        console.log('This epic has key - ' + epics[epic].key)
         var bugsInThisEpic = {}
         var buggs = params.forGlobalState.bugs
+        var bugsPending = 0
+        var bugsInProgress = 0
+        var bugsBlocked = 0
+        var bugsResolved = 0
         for (var bugg in buggs) {
           if (buggs[bugg].epickey === epics[epic].key) {
             bugsInThisEpic[buggs[bugg].key] = buggs[bugg]
+            if (buggs[bugg].status === 'On Hold') {
+              bugsBlocked++
+            }
+            else {
+              if (buggs[bugg].status === 'Done') {
+                bugsResolved++
+              }
+              else {
+                if (buggs[bugg].status === 'In Progress') {
+                  bugsInProgress++
+                }
+                else {
+                  bugsPending++
+                }
+              }
+            }
           }
         }
-        epics[epic].bugs = bugsInThisEpic
+        epics[epic].bugs = {
+          data: bugsInThisEpic,
+          totalReported: bugsPending,
+          totalInProgress: bugsInProgress,
+          totalBlocked: bugsBlocked,
+          totalResolved: bugsResolved
+        }
 
         state.epics.push(epics[epic])
 
         projectSummedTaskStoryPoints += epicSummedTaskStoryPoints
         projectSummedTaskBurnedStoryPoints += epicSummedTaskBurnedStoryPoints
+        projectSummedbugsPending += bugsPending
+        projectSummedbugsInProgress += bugsInProgress
+        projectSummedbugsBlocked += bugsBlocked
+        projectSummedbugsResolved += bugsResolved
       }
       numUserStoriesInThisProject += numUserStoriesInThisEpic
     }
@@ -164,6 +204,11 @@ const mutations = {
     state.project.numUserStories = numUserStoriesInThisProject
     state.project.numPoints = projectSummedTaskStoryPoints
     state.project.numBurnedPoints = projectSummedTaskBurnedStoryPoints
+    state.project.bugsPending = projectSummedbugsPending
+    state.project.bugsInProgress = projectSummedbugsInProgress
+    state.project.bugsBlocked = projectSummedbugsBlocked
+    state.project.bugsResolved = projectSummedbugsResolved
+
     state.exceptions = params.forGlobalState.exceptions
     state.stories = params.forGlobalState.stories
     state.project.sprints = params.forGlobalState.sprints
@@ -317,6 +362,16 @@ const getters = {
               Task: state.epics[epic].user_stories[userStory].tasks[task]
             })
           }
+        }
+      }
+      for (var bugID in state.epics[epic].bugs.data) {
+        var bug = state.epics[epic].bugs.data[bugID]
+        if (bug.status === 'On Hold') {
+          returnValue.push({
+            Epic: { key: state.epics[epic].key, name: state.epics[epic].name },
+            Story: { key: 'BUG', summary: 'None (Bug)' },
+            Task: bug
+          })
         }
       }
     }
