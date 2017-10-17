@@ -8,6 +8,7 @@ import jqlArgumentUtils from './jqlArgumentUtils'
 const state = {
   state: 0, // 0 = CREATED, 1 = LOADING, 2 = LOADED, 3 = ERROR
   epics: [],
+  bugs: {},
   exceptions: [],
   project: {
     progressPercantage: 0,
@@ -33,6 +34,7 @@ const mutations = {
   ERRORED_LOADING (state) {
     state.state = 3
   },
+  // Saves Epics, stories and bugs
   SAVE_EPICS (state, params) {
     state.epics = []
     var epics = params.forGlobalState.epics
@@ -168,6 +170,14 @@ const mutations = {
         return 1
       })
     }
+
+    // Copy all the bugs from the forGlobalState variable
+    raiseBugExecptions(params.forGlobalState)
+    state.bugs = {}
+    var bugs = params.forGlobalState.bugs
+    for (var bug in bugs) {
+      state.bugs[bugs[bug].key] = bugs[bug]
+    }
   },
   SAVE_JIRADATA (state, params) {
     state.srcJiraData = params.srcJiraData
@@ -234,6 +244,15 @@ function raiseTaskExecptions (forGlobalState, task, story) {
   }
 }
 
+function raiseBugExecptions (forGlobalState) {
+  Object.keys(forGlobalState.bugs).map(function (objectKey, index) {
+    var bug = forGlobalState.bugs[objectKey]
+    if (typeof (bug.epickey) === 'undefined') {
+      forGlobalState.exceptions = addException(forGlobalState.exceptions, bug.key, 'Bug has no epic set')
+    }
+  })
+}
+
 function raiseSprintExecptions (forGlobalState) {
   // console.log(forGlobalState.sprints)
   Object.keys(forGlobalState.sprints).map(function (objectKey, index) {
@@ -261,6 +280,9 @@ const getters = {
   },
   epics: (state, getters) => {
     return state.epics
+  },
+  bugs: (state, getters) => {
+    return state.bugs
   },
   exceptions: (state, getters) => {
     return state.exceptions
@@ -328,6 +350,7 @@ const actions = {
           // console.log(issues)
           var forGlobalState = {
             epics: [],
+            bugs: {},
             exceptions: [],
             sprints: {},
             state: state // Used to access state
@@ -483,10 +506,7 @@ function addTasks (commit, userStoryEpicMap, callback, forGlobalState) {
             // console.log(epicKey + ':' + userStoryKey)
           }
         }
-        passback.commit('SAVE_EPICS', {forGlobalState: forGlobalState})
-        passback.commit('COMPLETED_LOADING')
-
-        passback.callback.OKcallback.method({msg: 'OK'}, passback.callback.OKcallback.params)
+        addBugs(commit, userStoryEpicMap, callback, forGlobalState)
       },
       params: {commit: commit, callback: callback, forGlobalState: forGlobalState}
     },
@@ -499,6 +519,51 @@ function addTasks (commit, userStoryEpicMap, callback, forGlobalState) {
     jql: jqlArgumentUtils.getIssueRetervialJQL(forGlobalState.state.srcJiraData.taskProjects, ['Task']),
     callback: callback2
   })
+}
+
+function addBugs (commit, userStoryEpicMap, callback, forGlobalState) {
+  var callback2 = {
+    OKcallback: {
+      method: function (issues, passback) {
+        for (var i = 0; i < issues.length; i++) {
+          // Bugs are not in Userstories
+          var epickey = issues[i].fields.customfield_10800
+          if (typeof (epickey) !== 'string') {
+            epickey = undefined
+          }
+
+          forGlobalState.bugs[issues[i].key] = {
+            id: issues[i].id,
+            key: issues[i].key,
+            summary: issues[i].fields.summary,
+            description: issues[i].fields.description,
+            epickey: epickey,
+            status: issues[i].fields.status.name,
+            rank: issues[i].fields.customfield_11000,
+            sprintid: getSprintID(issues[i].fields.customfield_10501, issues[i].key, passback.forGlobalState, 'Task', undefined),
+            assignee: issues[i].fields.assignee
+          }
+        }
+        loadingChainFinalSteps(passback)
+      },
+      params: {commit: commit, callback: callback, forGlobalState: forGlobalState}
+    },
+    FAILcallback: {
+      method: loadDataErrorFn,
+      params: {commit: commit, callback: callback}
+    }
+  }
+  JIRAServiceCallStore.dispatch('query', {
+    jql: jqlArgumentUtils.getIssueRetervialJQL(forGlobalState.state.srcJiraData.taskProjects, ['Bug']),
+    callback: callback2
+  })
+}
+
+function loadingChainFinalSteps (passback) {
+  passback.commit('SAVE_EPICS', {forGlobalState: passback.forGlobalState})
+  passback.commit('COMPLETED_LOADING')
+
+  passback.callback.OKcallback.method({msg: 'OK'}, passback.callback.OKcallback.params)
 }
 
 function getSprintDataFromJIRAString (jiraString) {
