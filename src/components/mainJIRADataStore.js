@@ -134,6 +134,18 @@ const mutations = {
           })
         }
         epics[epic].user_stories = newUserStories
+
+        // Add bugs to this epic
+        console.log('This epic has key - ' + epics[epic].key)
+        var bugsInThisEpic = {}
+        var buggs = params.forGlobalState.bugs
+        for (var bugg in buggs) {
+          if (buggs[bugg].epickey === epics[epic].key) {
+            bugsInThisEpic[buggs[bugg].key] = buggs[bugg]
+          }
+        }
+        epics[epic].bugs = bugsInThisEpic
+
         state.epics.push(epics[epic])
 
         projectSummedTaskStoryPoints += epicSummedTaskStoryPoints
@@ -363,7 +375,8 @@ const actions = {
               user_stories: [],
               summedStoryPoints: 0,
               summedBurnedStoryPoints: 0,
-              rank: issues[i].fields.customfield_11000
+              rank: issues[i].fields.customfield_11000,
+              bugs: {}
             }
           }
           // We have now collected all the epics
