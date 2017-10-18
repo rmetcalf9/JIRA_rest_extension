@@ -1,6 +1,8 @@
 <template>
   <div>TEST2 HOME <br>{{ epic_data }}
   <br>{{ loading_state_txt }}
+  <h3>Issues</h3>
+  {{ issues }}
   <h3>Epcis</h3>
   {{ epics }}
   <h3>Exceptions</h3>
@@ -26,6 +28,9 @@ export default {
     },
     loading_state_txt () {
       return mainJIRADataStore.getters.status_txt
+    },
+    issues () {
+      return mainJIRADataStore.getters.issues
     },
     epics () {
       return mainJIRADataStore.getters.epics

@@ -7,6 +7,7 @@ import jqlArgumentUtils from './jqlArgumentUtils'
 // Main state for this store
 const state = {
   state: 0, // 0 = CREATED, 1 = LOADING, 2 = LOADED, 3 = ERROR
+  issues: {}, // Will replace epics, and bugs
   epics: [],
   bugs: {},
   exceptions: [],
@@ -40,6 +41,9 @@ const mutations = {
   },
   // Saves Epics, stories and bugs
   SAVE_EPICS (state, params) {
+    state.issues = params.forGlobalState.issues // direct assignment no caculations
+
+    // Old calc code below - to be eliminates
     state.epics = []
     var epics = params.forGlobalState.epics
     var projectSummedTaskStoryPoints = 0
@@ -335,6 +339,9 @@ const getters = {
     if (state.state === 3) return 'Error'
     return 'Unknown'
   },
+  issues: (state, getters) => {
+    return state.issues
+  },
   epics: (state, getters) => {
     return state.epics
   },
@@ -410,47 +417,90 @@ const actions = {
   },
   loadJIRAdata ({commit, state}, params) {
     commit('START_LOADING')
-    var callback = {
-      OKcallback: {
-        method: function (issues, passback) {
-          // console.log('Epic query sesponses')
-          // console.log(issues)
-          var forGlobalState = {
-            epics: [],
-            bugs: {},
-            exceptions: [],
-            sprints: {},
-            state: state // Used to access state
-          }
-          for (var i = 0; i < issues.length; i++) {
-            forGlobalState.epics[issues[i].key] = {
-              id: issues[i].id,
-              key: issues[i].key,
-              name: issues[i].fields.customfield_10801,
-              user_stories: [],
-              summedStoryPoints: 0,
-              summedBurnedStoryPoints: 0,
-              rank: issues[i].fields.customfield_11000,
-              bugs: {}
-            }
-          }
-          // We have now collected all the epics
-          // now query user stories
-          addUserStories(passback.commit, forGlobalState, passback.callback)
-        },
-        params: {state: state, commit: commit, callback: params.callback}
-      },
-      FAILcallback: {
-        method: loadDataErrorFn,
-        params: {commit: commit, callback: params.callback}
-      }
+    var forGlobalState = {
+      issues: {},
+      epics: [],
+      bugs: {},
+      exceptions: [],
+      sprints: {},
+      state: state // Used to access state
     }
-    JIRAServiceCallStore.dispatch('query', {
-      jql: jqlArgumentUtils.getIssueRetervialJQL(state.srcJiraData.epicProjects, ['Epic']),
-      callback: callback
-    })
-    // state.calljira.query('ABC', callback)
+
+    loadIssues(commit, forGlobalState, params.callback)
   }
+}
+
+function loadIssues (commit, forGlobalState, callbackIn) {
+  var callback = {
+    OKcallback: {
+      method: function (issues, passback) {
+        // Code will load all issues. 
+        //  Will deal with optional fields in a way that suppoerts Epic, Bug, Story and Task
+        //  Derived sub-elements supplied as functions
+        //  Caculated sub-elements supplied as functions
+        // console.log(issues)
+        for (var i = 0; i < issues.length; i++) {
+          console.log(issues[i])
+          forGlobalState.issues[issues[i].key] = {
+            issuetype: issues[i].fields.issuetype.name,
+            id: issues[i].id,
+            key: issues[i].key,
+            name: issues[i].fields.customfield_10801,
+            user_stories: [],
+            summedStoryPoints: 0,
+            summedBurnedStoryPoints: 0,
+            rank: issues[i].fields.customfield_11000
+          }
+        }
+        loadEpics(commit, forGlobalState, callbackIn)
+      },
+      params: {state: state, commit: commit, callback: callbackIn}
+    },
+    FAILcallback: {
+      method: loadDataErrorFn,
+      params: {commit: commit, callback: callbackIn}
+    }
+  }
+  JIRAServiceCallStore.dispatch('query', {
+    // TODO Extend to load Epic, Bug, Task and Story
+    jql: jqlArgumentUtils.getIssueRetervialJQL(state.srcJiraData.epicProjects, ['Epic']),
+    callback: callback
+  })
+}
+
+function loadEpics (commit, forGlobalState, callbackIn) {
+  var callback = {
+    OKcallback: {
+      method: function (issues, passback) {
+        // console.log('Epic query sesponses')
+        // console.log(issues)
+        for (var i = 0; i < issues.length; i++) {
+          forGlobalState.epics[issues[i].key] = {
+            id: issues[i].id,
+            key: issues[i].key,
+            name: issues[i].fields.customfield_10801,
+            user_stories: [],
+            summedStoryPoints: 0,
+            summedBurnedStoryPoints: 0,
+            rank: issues[i].fields.customfield_11000,
+            bugs: {}
+          }
+        }
+        // We have now collected all the epics
+        // now query user stories
+        addUserStories(passback.commit, forGlobalState, passback.callback)
+      },
+      params: {state: state, commit: commit, callback: callbackIn}
+    },
+    FAILcallback: {
+      method: loadDataErrorFn,
+      params: {commit: commit, callback: callbackIn}
+    }
+  }
+  JIRAServiceCallStore.dispatch('query', {
+    jql: jqlArgumentUtils.getIssueRetervialJQL(state.srcJiraData.epicProjects, ['Epic']),
+    callback: callback
+  })
 }
 
 function loadDataErrorFn (retData, passback) {
