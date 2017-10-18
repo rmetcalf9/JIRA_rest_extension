@@ -46,7 +46,7 @@
         <q-item-main v-bind:label="'<b>Exceptions (' + numexceptions + ')</b>'" />
       </q-side-link>
       <q-side-link item to="/issues">
-        <q-item-side icon="pie_chart" />
+        <q-item-side icon="list" />
         <q-item-main label="Issues" />
       </q-side-link>
       <hr>
