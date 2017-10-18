@@ -60,6 +60,7 @@ export default new VueRouter({
         { path: 'sprints/:sprintID', component: load('DetailedProgress'), beforeEnter (to, from, next) { defaultBeforeNavFn(to, from, next, 'Sprint ' + to.params.sprintID) } },
         { path: 'progress', component: load('Progress'), beforeEnter (to, from, next) { defaultBeforeNavFn(to, from, next, 'Progress') } },
         { path: 'test', component: load('Test'), beforeEnter (to, from, next) { defaultBeforeNavFn(to, from, next, 'Temp Test Page') } },
+        { path: 'issues', component: load('Issues'), beforeEnter (to, from, next) { defaultBeforeNavFn(to, from, next, 'All Issues') } },
         { path: '/changeproject', component: load('ChangeProject'), beforeEnter (to, from, next) { defaultBeforeNavFn(to, from, next, 'Change Project') } }
       ]
     },

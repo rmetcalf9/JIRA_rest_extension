@@ -440,7 +440,7 @@ function loadIssues (commit, forGlobalState, callbackIn) {
         //  Caculated sub-elements supplied as functions
         // console.log(issues)
         for (var i = 0; i < issues.length; i++) {
-          console.log(issues[i])
+          // console.log(issues[i])
           forGlobalState.issues[issues[i].key] = {
             issuetype: issues[i].fields.issuetype.name,
             id: issues[i].id,

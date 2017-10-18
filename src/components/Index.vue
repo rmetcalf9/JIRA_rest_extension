@@ -45,6 +45,10 @@
         <q-item-side icon="bug_report" />
         <q-item-main v-bind:label="'<b>Exceptions (' + numexceptions + ')</b>'" />
       </q-side-link>
+      <q-side-link item to="/issues">
+        <q-item-side icon="pie_chart" />
+        <q-item-main label="Issues" />
+      </q-side-link>
       <hr>
       <q-side-link item to="/test">
         <q-item-side icon="group_work" />
