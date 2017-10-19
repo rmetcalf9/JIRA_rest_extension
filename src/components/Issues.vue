@@ -59,6 +59,12 @@ export default {
           sort: strSort
         },
         {
+          label: 'Status',
+          field: 'status',
+          filter: true,
+          sort: strSort
+        },
+        {
           label: 'Name',
           field: 'name',
           filter: true,
@@ -75,6 +81,12 @@ export default {
           field: 'description',
           filter: true,
           sort: strSort
+        },
+        {
+          label: 'Epic',
+          field: 'epickey',
+          filter: true,
+          sort: strSort
         }
       ]
     }
@@ -84,10 +96,18 @@ export default {
       return JIRAServiceCallStore.getters.getIssueURLGenerator
     },
     issues () {
+      console.log('A')
+      mainJIRADataStore.getters.issuesArray.map(function (x) {
+        var t = x.bugsFN()
+        if (t.bugs.length > 0) {
+          console.log(x.bugsFN())
+        }
+      })
+      console.log('B')
       return mainJIRADataStore.getters.issues
     },
     issuesArray () {
-      return Object.keys(mainJIRADataStore.getters.issues).map(function (key) { return mainJIRADataStore.getters.issues[key] })
+      return mainJIRADataStore.getters.issuesArray
     }
   }
 }

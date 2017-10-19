@@ -9,8 +9,6 @@
   {{ exceptions }}
   <h3>Sprints</h3>
   {{ sprints }}
-  <h3>Bugs</h3>
-  {{ bugs }}
   </div>
 </template>
 
@@ -34,9 +32,6 @@ export default {
     },
     epics () {
       return mainJIRADataStore.getters.epics
-    },
-    bugs () {
-      return mainJIRADataStore.getters.bugs
     },
     exceptions () {
       return mainJIRADataStore.getters.exceptions

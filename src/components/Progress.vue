@@ -21,10 +21,10 @@
 					<td data-th="Points" class="text-right">{{ epic.summedBurnedStoryPoints }}/{{ epic.summedStoryPoints }}</td>
 					<td data-th="Progress" class="text-right" v-if="epic.summedStoryPoints !== 0">{{ Math.round(100 * (epic.summedBurnedStoryPoints / epic.summedStoryPoints)) }}%</td>
 					<td data-th="Progress" class="text-right" v-if="epic.summedStoryPoints == 0">0%</td>
-					<td data-th="Bugs Pending" class="text-right">{{ epic.bugs.totalReported }}</td>
-					<td data-th="Bugs In Progress" class="text-right">{{ epic.bugs.totalInProgress }}</td>
-					<td data-th="Bugs Blocked" class="text-right">{{ epic.bugs.totalBlocked }}</td>
-					<td data-th="Bugs Resolved" class="text-right">{{ epic.bugs.totalResolved }}</td>
+					<td data-th="Bugs Pending" class="text-right">{{ epic.bugs.Pending }}</td>
+					<td data-th="Bugs In Progress" class="text-right">{{ epic.bugs.InProgress }}</td>
+					<td data-th="Bugs Blocked" class="text-right">{{ epic.bugs.Blocked }}</td>
+					<td data-th="Bugs Resolved" class="text-right">{{ epic.bugs.Resolved }}</td>
 				</tr>
 			</tbody>
 			<thead>
@@ -175,10 +175,10 @@ export default {
         else {
           newBodyString += '<td style="text-align: right;">0%</td>'
         }
-        newBodyString += '<td style="text-align: right;">' + epic.bugs.totalReported + '</td>'
-        newBodyString += '<td style="text-align: right;">' + epic.bugs.totalInProgress + '</td>'
-        newBodyString += '<td style="text-align: right;">' + epic.bugs.totalBlocked + '</td>'
-        newBodyString += '<td style="text-align: right;">' + epic.bugs.totalResolved + '</td>'
+        newBodyString += '<td style="text-align: right;">' + epic.bugs.Pending + '</td>'
+        newBodyString += '<td style="text-align: right;">' + epic.bugs.InProgress + '</td>'
+        newBodyString += '<td style="text-align: right;">' + epic.bugs.Blocked + '</td>'
+        newBodyString += '<td style="text-align: right;">' + epic.bugs.Resolved + '</td>'
 
         newBodyString += '</tr>'
       }

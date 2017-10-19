@@ -7,9 +7,9 @@ import jqlArgumentUtils from './jqlArgumentUtils'
 // Main state for this store
 const state = {
   state: 0, // 0 = CREATED, 1 = LOADING, 2 = LOADED, 3 = ERROR
-  issues: {}, // Will replace epics, and bugs
+  issues: {}, // Map of issues so we can lookup
+  issuesArray: [], // Array of issues
   epics: [],
-  bugs: {},
   exceptions: [],
   project: {
     progressPercantage: 0,
@@ -42,6 +42,8 @@ const mutations = {
   // Saves Epics, stories and bugs
   SAVE_EPICS (state, params) {
     state.issues = params.forGlobalState.issues // direct assignment no caculations
+    state.issuesArray = Object.keys(state.issues).map(function (key) { return state.issues[key] })
+    raiseBugExecptions(params.forGlobalState)
 
     // Old calc code below - to be eliminates
     state.epics = []
@@ -150,50 +152,16 @@ const mutations = {
         }
         epics[epic].user_stories = newUserStories
 
-        // Add bugs to this epic
-        var bugsInThisEpic = {}
-        var buggs = params.forGlobalState.bugs
-        var bugsPending = 0
-        var bugsInProgress = 0
-        var bugsBlocked = 0
-        var bugsResolved = 0
-        for (var bugg in buggs) {
-          if (buggs[bugg].epickey === epics[epic].key) {
-            bugsInThisEpic[buggs[bugg].key] = buggs[bugg]
-            if (buggs[bugg].status === 'On Hold') {
-              bugsBlocked++
-            }
-            else {
-              if (buggs[bugg].status === 'Done') {
-                bugsResolved++
-              }
-              else {
-                if (buggs[bugg].status === 'In Progress') {
-                  bugsInProgress++
-                }
-                else {
-                  bugsPending++
-                }
-              }
-            }
-          }
-        }
-        epics[epic].bugs = {
-          data: bugsInThisEpic,
-          totalReported: bugsPending,
-          totalInProgress: bugsInProgress,
-          totalBlocked: bugsBlocked,
-          totalResolved: bugsResolved
-        }
-
         state.epics.push(epics[epic])
+
+        epics[epic].bugs = state.issues[epics[epic].key].bugsFN()
+        projectSummedbugsPending += epics[epic].bugs.Pending
+        projectSummedbugsInProgress += epics[epic].bugs.InProgress
+        projectSummedbugsBlocked += epics[epic].bugs.Blocked
+        projectSummedbugsResolved += epics[epic].bugs.Resolved
 
         projectSummedTaskStoryPoints += epicSummedTaskStoryPoints
         projectSummedTaskBurnedStoryPoints += epicSummedTaskBurnedStoryPoints
-        projectSummedbugsPending += bugsPending
-        projectSummedbugsInProgress += bugsInProgress
-        projectSummedbugsBlocked += bugsBlocked
-        projectSummedbugsResolved += bugsResolved
       }
       numUserStoriesInThisProject += numUserStoriesInThisEpic
     }
@@ -230,14 +198,6 @@ const mutations = {
         if (ak.rank < bk.rank) return -1
         return 1
       })
-    }
-
-    // Copy all the bugs from the forGlobalState variable
-    raiseBugExecptions(params.forGlobalState)
-    state.bugs = {}
-    var bugs = params.forGlobalState.bugs
-    for (var bug in bugs) {
-      state.bugs[bugs[bug].key] = bugs[bug]
     }
   },
   SAVE_JIRADATA (state, params) {
@@ -306,12 +266,15 @@ function raiseTaskExecptions (forGlobalState, task, story) {
 }
 
 function raiseBugExecptions (forGlobalState) {
-  Object.keys(forGlobalState.bugs).map(function (objectKey, index) {
-    var bug = forGlobalState.bugs[objectKey]
+  var bugsArray = Object.keys(state.issues).map(function (key) { return state.issues[key] }).filter(function (curIssue) {
+    if (curIssue.issuetype !== 'Bug') return false
+  })
+  for (var bugID in bugsArray) {
+    var bug = bugsArray[bugID]
     if (typeof (bug.epickey) === 'undefined') {
       forGlobalState.exceptions = addException(forGlobalState.exceptions, bug.key, 'Bug has no epic set')
     }
-  })
+  }
 }
 
 function raiseSprintExecptions (forGlobalState) {
@@ -342,11 +305,11 @@ const getters = {
   issues: (state, getters) => {
     return state.issues
   },
+  issuesArray: (state, getters) => {
+    return state.issuesArray
+  },
   epics: (state, getters) => {
     return state.epics
-  },
-  bugs: (state, getters) => {
-    return state.bugs
   },
   exceptions: (state, getters) => {
     return state.exceptions
@@ -371,15 +334,18 @@ const getters = {
           }
         }
       }
-      for (var bugID in state.epics[epic].bugs.data) {
-        var bug = state.epics[epic].bugs.data[bugID]
-        if (bug.status === 'On Hold') {
-          returnValue.push({
-            Epic: { key: state.epics[epic].key, name: state.epics[epic].name },
-            Story: { key: 'BUG', summary: 'None (Bug)' },
-            Task: bug
-          })
-        }
+      var bugsOnHoldForThisEpicArray = Object.keys(state.issues).map(function (key) { return state.issues[key] }).filter(function (curIssue) {
+        if (curIssue.issuetype !== 'Bug') return false
+        if (curIssue.status !== 'On Hold') return false
+        return (curIssue.epickey === state.epics[epic].key)
+      })
+      for (var bugID in bugsOnHoldForThisEpicArray) {
+        var bug = bugsOnHoldForThisEpicArray[bugID]
+        returnValue.push({
+          Epic: { key: state.epics[epic].key, name: state.epics[epic].name },
+          Story: { key: 'BUG', summary: 'None (Bug)' },
+          Task: bug
+        })
       }
     }
     return returnValue
@@ -430,6 +396,56 @@ const actions = {
   }
 }
 
+// Partial function for use inside Issue structure
+function caculateBugsInIssue (issue, state) {
+  return function () {
+    if (issue.issuetype !== 'Epic') {
+      return {
+        bugs: [],
+        Pending: 0,
+        InProgress: 0,
+        Blocked: 0,
+        Resolved: 0
+      }
+    }
+    // state value passed is the latest, not the evaluated version when the function is partially applied
+    var bugArray = Object.keys(state.issues).map(function (key) { return state.issues[key] }).filter(function (curIssue) {
+      if (curIssue.issuetype !== 'Bug') return false
+      return (curIssue.epickey === issue.key)
+    })
+    var Pending = 0
+    var InProgress = 0
+    var Blocked = 0
+    var Resolved = 0
+    for (var curBugIdx in bugArray) {
+      var curBug = bugArray[curBugIdx]
+      if (curBug.status === 'On Hold') {
+        Blocked++
+      }
+      else {
+        if (curBug.status === 'Done') {
+          Resolved++
+        }
+        else {
+          if (curBug.status === 'In Progress') {
+            InProgress++
+          }
+          else {
+            Pending++
+          }
+        }
+      }
+    }
+    return {
+      bugs: bugArray,
+      Pending: Pending,
+      InProgress: InProgress,
+      Blocked: Blocked,
+      Resolved: Resolved
+    }
+  }
+}
+
 function loadIssues (commit, forGlobalState, callbackIn) {
   var callback = {
     OKcallback: {
@@ -441,19 +457,26 @@ function loadIssues (commit, forGlobalState, callbackIn) {
         // console.log(issues)
         for (var i = 0; i < issues.length; i++) {
           // console.log(issues[i])
-          forGlobalState.issues[issues[i].key] = {
+          var epickey = issues[i].fields.customfield_10800
+          var thisIssue = {
             issuetype: issues[i].fields.issuetype.name,
             id: issues[i].id,
             key: issues[i].key,
             name: issues[i].fields.customfield_10801, // only epics have names
             summary: issues[i].fields.summary,
             description: issues[i].fields.description,
-            rank: issues[i].fields.customfield_11000
+            rank: issues[i].fields.customfield_11000,
+            epickey: epickey,
+            status: issues[i].fields.status.name,
+            story_points: issues[i].fields.customfield_10004,
+            assignee: issues[i].fields.assignee
           }
+          thisIssue.bugsFN = caculateBugsInIssue(thisIssue, forGlobalState.state)
+          forGlobalState.issues[thisIssue.key] = thisIssue
         }
         loadEpics(commit, forGlobalState, callbackIn)
       },
-      params: {state: state, commit: commit, callback: callbackIn}
+      params: {}
     },
     FAILcallback: {
       method: loadDataErrorFn,
@@ -623,44 +646,6 @@ function addTasks (commit, userStoryEpicMap, callback, forGlobalState) {
             // console.log(epicKey + ':' + userStoryKey)
           }
         }
-        addBugs(commit, userStoryEpicMap, callback, forGlobalState)
-      },
-      params: {commit: commit, callback: callback, forGlobalState: forGlobalState}
-    },
-    FAILcallback: {
-      method: loadDataErrorFn,
-      params: {commit: commit, callback: callback}
-    }
-  }
-  JIRAServiceCallStore.dispatch('query', {
-    jql: jqlArgumentUtils.getIssueRetervialJQL(forGlobalState.state.srcJiraData.taskProjects, ['Task']),
-    callback: callback2
-  })
-}
-
-function addBugs (commit, userStoryEpicMap, callback, forGlobalState) {
-  var callback2 = {
-    OKcallback: {
-      method: function (issues, passback) {
-        for (var i = 0; i < issues.length; i++) {
-          // Bugs are not in Userstories
-          var epickey = issues[i].fields.customfield_10800
-          if (typeof (epickey) !== 'string') {
-            epickey = undefined
-          }
-
-          forGlobalState.bugs[issues[i].key] = {
-            id: issues[i].id,
-            key: issues[i].key,
-            summary: issues[i].fields.summary,
-            description: issues[i].fields.description,
-            epickey: epickey,
-            status: issues[i].fields.status.name,
-            rank: issues[i].fields.customfield_11000,
-            sprintid: getSprintID(issues[i].fields.customfield_10501, issues[i].key, passback.forGlobalState, 'Task', undefined),
-            assignee: issues[i].fields.assignee
-          }
-        }
         loadingChainFinalSteps(passback)
       },
       params: {commit: commit, callback: callback, forGlobalState: forGlobalState}
@@ -671,7 +656,7 @@ function addBugs (commit, userStoryEpicMap, callback, forGlobalState) {
     }
   }
   JIRAServiceCallStore.dispatch('query', {
-    jql: jqlArgumentUtils.getIssueRetervialJQL(forGlobalState.state.srcJiraData.taskProjects, ['Bug']),
+    jql: jqlArgumentUtils.getIssueRetervialJQL(forGlobalState.state.srcJiraData.taskProjects, ['Task']),
     callback: callback2
   })
 }
