@@ -166,7 +166,7 @@ export default {
       for (var epicIdx in mainJIRADataStore.getters.epics) {
         var epic = mainJIRADataStore.getters.epics[epicIdx]
         newBodyString += '<tr>'
-        newBodyString += '<td><span style="color: rgb(0,0,0);"><a href="' + issueURLGenerator(epic.key) + '">' + epic.key + '</a> - ' + epic.name + '</span></td>'
+        newBodyString += '<td><span style="color: rgb(0,0,0);"><a href="' + issueURLGenerator(epic.key) + '" target="_new">' + epic.key + '</a> - ' + epic.name + '</span></td>'
         newBodyString += '<td style="text-align: right;">' + epic.user_stories.length + '</td>'
         newBodyString += '<td style="text-align: right;">' + epic.summedBurnedStoryPoints + '/' + epic.summedStoryPoints + '</td>'
         if (epic.summedStoryPoints !== 0) {

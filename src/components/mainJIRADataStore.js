@@ -445,10 +445,9 @@ function loadIssues (commit, forGlobalState, callbackIn) {
             issuetype: issues[i].fields.issuetype.name,
             id: issues[i].id,
             key: issues[i].key,
-            name: issues[i].fields.customfield_10801,
-            user_stories: [],
-            summedStoryPoints: 0,
-            summedBurnedStoryPoints: 0,
+            name: issues[i].fields.customfield_10801, // only epics have names
+            summary: issues[i].fields.summary,
+            description: issues[i].fields.description,
             rank: issues[i].fields.customfield_11000
           }
         }
@@ -462,8 +461,7 @@ function loadIssues (commit, forGlobalState, callbackIn) {
     }
   }
   JIRAServiceCallStore.dispatch('query', {
-    // TODO Extend to load Epic, Bug, Task and Story
-    jql: jqlArgumentUtils.getIssueRetervialJQL(state.srcJiraData.epicProjects, ['Epic']),
+    jql: jqlArgumentUtils.getIssueRetervialJQL(state.srcJiraData.epicProjects, ['Epic', 'Story', 'Task', 'Bug']),
     callback: callback
   })
 }
@@ -479,6 +477,7 @@ function loadEpics (commit, forGlobalState, callbackIn) {
             id: issues[i].id,
             key: issues[i].key,
             name: issues[i].fields.customfield_10801,
+            description: issues[i].fields.description,
             user_stories: [],
             summedStoryPoints: 0,
             summedBurnedStoryPoints: 0,
