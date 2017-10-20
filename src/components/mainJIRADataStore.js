@@ -44,6 +44,18 @@ const mutations = {
     state.issues = params.forGlobalState.issues // direct assignment no caculations
     state.issuesArray = Object.keys(state.issues).map(function (key) { return state.issues[key] })
     raiseBugExecptions(params.forGlobalState)
+    raiseSprintExecptions(params.forGlobalState)
+    raiseTaskExecptions(params.forGlobalState)
+
+    state.project.sprints = params.forGlobalState.sprints
+    // Sort epics in each sprint by JIRA rank
+    for (var sprintID in state.project.sprints) {
+      state.project.sprints[sprintID].epics = state.project.sprints[sprintID].epics.sort(function (ak, bk) {
+        if (ak.rank === bk.rank) return 0
+        if (ak.rank < bk.rank) return -1
+        return 1
+      })
+    }
 
     // Old calc code below - to be eliminates
     state.epics = []
@@ -87,7 +99,6 @@ const mutations = {
                 summedTaskStoryPoints += epics[epic].user_stories[userstory].tasks[task].story_points
               }
             }
-            raiseTaskExecptions(params.forGlobalState, epics[epic].user_stories[userstory].tasks[task], epics[epic].user_stories[userstory])
             newTasks.push(epics[epic].user_stories[userstory].tasks[task])
           }
           if (numEstimatedTasks !== numTasks) {
@@ -171,7 +182,6 @@ const mutations = {
     else {
       state.project.progressPercantage = Math.round((100 * projectSummedTaskBurnedStoryPoints) / projectSummedTaskStoryPoints)
     }
-    raiseSprintExecptions(params.forGlobalState)
 
     state.project.numUserStories = numUserStoriesInThisProject
     state.project.numPoints = projectSummedTaskStoryPoints
@@ -183,7 +193,6 @@ const mutations = {
 
     state.exceptions = params.forGlobalState.exceptions
     state.stories = params.forGlobalState.stories
-    state.project.sprints = params.forGlobalState.sprints
 
     // Sort the epics by JIRA rank
     state.epics = state.epics.sort(function (ak, bk) {
@@ -191,24 +200,36 @@ const mutations = {
       if (ak.rank < bk.rank) return -1
       return 1
     })
-    // Sort epics in each sprint by JIRA rank
-    for (var sprintID in state.project.sprints) {
-      state.project.sprints[sprintID].epics = state.project.sprints[sprintID].epics.sort(function (ak, bk) {
-        if (ak.rank === bk.rank) return 0
-        if (ak.rank < bk.rank) return -1
-        return 1
-      })
+
+    // ** TMP code needed for old data structure
+    // put epics into sprints
+    for (var sprintID2 in params.forGlobalState.sprints) {
+      var sprint = params.forGlobalState.sprints[sprintID2]
+
+      var epicsInThisSprint = sprint.getEpicsFN()
+
+      for (var epicID2 in epicsInThisSprint) {
+        // need to give OLD version of the epic
+        var epic2 = params.forGlobalState.epics[epicsInThisSprint[epicID2].key]
+        params.forGlobalState.sprints[sprintID2].epics.push(epic2)
+        params.forGlobalState.sprints[sprintID2].epicsKeys[epic2.key] = epic2.key
+      }
+      // console.log(sprint)
+      // console.log(epicsInThisSprint)
     }
+    // **TMP CODE END
   },
   SAVE_JIRADATA (state, params) {
     state.srcJiraData = params.srcJiraData
   }
 }
 
+// TASK REM START
 function padWithLeadingZero (num, places) {
   var tmp = '000000000000000000000000000000000000000000000000000' + num.toString().trim()
   return tmp.substring(tmp.length - places)
 }
+
 function truncDate (date) {
   var monthNames = [
     'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'
@@ -220,11 +241,44 @@ function getEpicString (forGlobalState, epicKey) {
   if (typeof (epicKey) === 'undefined') {
     return 'Undefined'
   }
-  return forGlobalState.epics[epicKey].name
+  if (typeof (forGlobalState.issues[epicKey]) === 'undefined') return 'Undefined'
+  if (forGlobalState.issues[epicKey].issuetype !== 'Epic') {
+    console.log('ERROR - Not an epic')
+    return 'ERROR not an epic'
+  }
+  return forGlobalState.issues[epicKey].name
 }
 
-// Raises task exceptions. (Invalid story exceptions raised during initial task load)
-function raiseTaskExecptions (forGlobalState, task, story) {
+function isNullOrUndefined (varr) {
+  if (varr === null) return true
+  if (typeof (varr) === 'undefined') return true
+  return false
+}
+
+function raiseSingleTaskExecptions (forGlobalState, task) {
+  if (isNullOrUndefined(task.associatedStoryKey)) {
+    forGlobalState.exceptions = addException(forGlobalState.exceptions, task.key, 'Task without userstorykey set')
+    return
+  }
+  var story = forGlobalState.issues[task.associatedStoryKey]
+  if (isNullOrUndefined(task.associatedStoryKey)) {
+    forGlobalState.exceptions = addException(forGlobalState.exceptions, task.key, 'Task with invalid userstorykey ' + task.associatedStoryKey)
+  }
+
+  var storyEpicKeyText = 'Undefined'
+  if (typeof (task.associatedStoryKey) !== 'undefined') {
+    storyEpicKeyText = getEpicString(forGlobalState, forGlobalState.issues[task.associatedStoryKey].epickey)
+  }
+  if (isNullOrUndefined(task.epickey)) {
+    forGlobalState.exceptions = addException(forGlobalState.exceptions, task.key, 'Task has no epic set (Story epic is ' + storyEpicKeyText + ')')
+  }
+  else {
+    if (task.epickey !== story.epickey) {
+      var taskEpicKeyText = getEpicString(forGlobalState, task.epickey)
+      forGlobalState.exceptions = addException(forGlobalState.exceptions, task.key, 'Task is not in same epic as story (Task epic is ' + taskEpicKeyText + ', story epic is  ' + storyEpicKeyText + ')')
+    }
+  }
+
   var storyDate = new Date('31-DEC-4712')
   var taskDate = new Date('31-DEC-4712')
   if (story.sprintid !== null) {
@@ -239,20 +293,6 @@ function raiseTaskExecptions (forGlobalState, task, story) {
     taskDate = truncDate(forGlobalState.sprints[task.sprintid].end)
   }
 
-  // Find tasks who's epic dosen't match the user story epic
-  var storyEpicKeyText = getEpicString(forGlobalState, story.epickey)
-  var taskEpicKeyText = getEpicString(forGlobalState, task.epickey)
-  if (typeof (task.epickey) === 'undefined') {
-    forGlobalState.exceptions = addException(forGlobalState.exceptions, task.key, 'Task has no epic set (Story epic is ' + storyEpicKeyText + ')')
-  }
-  else {
-    if (task.epickey !== story.epickey) {
-      forGlobalState.exceptions = addException(forGlobalState.exceptions, task.key, 'Task is not in same epic as story (Task is ' + taskEpicKeyText + ', story is  ' + storyEpicKeyText + ')')
-      console.log(task.epickey)
-      console.log(story.epickey)
-    }
-  }
-
   if (storyDate < taskDate) {
     if (task.status !== 'Done') {
       if (task.sprintid === null) {
@@ -265,9 +305,20 @@ function raiseTaskExecptions (forGlobalState, task, story) {
   }
 }
 
+function raiseTaskExecptions (forGlobalState) {
+  var taskArray = Object.keys(forGlobalState.issues).map(function (key) { return forGlobalState.issues[key] }).filter(function (curIssue) {
+    if (curIssue.issuetype !== 'Task') return false
+    return true
+  })
+  for (var taskID in taskArray) {
+    raiseSingleTaskExecptions(forGlobalState, taskArray[taskID])
+  }
+}
+
 function raiseBugExecptions (forGlobalState) {
-  var bugsArray = Object.keys(state.issues).map(function (key) { return state.issues[key] }).filter(function (curIssue) {
+  var bugsArray = Object.keys(forGlobalState.issues).map(function (key) { return forGlobalState.issues[key] }).filter(function (curIssue) {
     if (curIssue.issuetype !== 'Bug') return false
+    return true
   })
   for (var bugID in bugsArray) {
     var bug = bugsArray[bugID]
@@ -278,7 +329,6 @@ function raiseBugExecptions (forGlobalState) {
 }
 
 function raiseSprintExecptions (forGlobalState) {
-  // console.log(forGlobalState.sprints)
   Object.keys(forGlobalState.sprints).map(function (objectKey, index) {
     var x = forGlobalState.sprints[objectKey]
     if (x.hasTasks) {
@@ -322,6 +372,7 @@ const getters = {
   },
   blockages: (state, getters) => {
     var returnValue = []
+    // TODO Move to using Issues
     for (var epic in state.epics) {
       for (var userStory in state.epics[epic].user_stories) {
         for (var task in state.epics[epic].user_stories[userStory].tasks) {
@@ -446,7 +497,13 @@ function caculateBugsInIssue (issue, state) {
   }
 }
 
+function undefIfUndef (val) {
+  if (val === 'undefined') return undefined
+  return val
+}
+
 function loadIssues (commit, forGlobalState, callbackIn) {
+  // main issue load  mainload
   var callback = {
     OKcallback: {
       method: function (issues, passback) {
@@ -457,6 +514,12 @@ function loadIssues (commit, forGlobalState, callbackIn) {
         // console.log(issues)
         for (var i = 0; i < issues.length; i++) {
           // console.log(issues[i])
+          var userStoryKey = 'undefined'
+          if (issues[i].fields.customfield_11101 !== null) {
+            for (var j = 0; j < issues[i].fields.customfield_11101.length; j++) {
+              userStoryKey = issues[i].fields.customfield_11101[j]
+            }
+          }
           var epickey = issues[i].fields.customfield_10800
           var thisIssue = {
             issuetype: issues[i].fields.issuetype.name,
@@ -469,7 +532,9 @@ function loadIssues (commit, forGlobalState, callbackIn) {
             epickey: epickey,
             status: issues[i].fields.status.name,
             story_points: issues[i].fields.customfield_10004,
-            assignee: issues[i].fields.assignee
+            assignee: issues[i].fields.assignee,
+            associatedStoryKey: undefIfUndef(userStoryKey),
+            sprintid: getSprintID(issues[i].fields.customfield_10501, issues[i].key, forGlobalState, issues[i].fields.issuetype.name, epickey)
           }
           thisIssue.bugsFN = caculateBugsInIssue(thisIssue, forGlobalState.state)
           forGlobalState.issues[thisIssue.key] = thisIssue
@@ -557,7 +622,7 @@ function addUserStories (commit, forGlobalState, callback) {
             else {
               storyPoints = issues[i].fields.customfield_10004
             }
-            var sprintID = getSprintID(issues[i].fields.customfield_10501, issues[i].key, passback.forGlobalState, 'Story', passback.forGlobalState.epics[epickey])
+            var sprintID = getSprintID(issues[i].fields.customfield_10501, issues[i].key, passback.forGlobalState, 'Story', epickey)
             var userStory = {
               id: issues[i].id,
               key: userStorykey,
@@ -610,7 +675,7 @@ function addTasks (commit, userStoryEpicMap, callback, forGlobalState) {
         for (var i = 0; i < issues.length; i++) {
           // ignoring epic in task, epic looked up based on user story
           if ((typeof (issues[i].fields.customfield_11101) === 'undefined') || (issues[i].fields.customfield_11101 === null)) {
-            passback.forGlobalState.exceptions = addException(passback.forGlobalState.exceptions, issues[i].key, 'Task without userstorykey set')
+            // Exception moved
           }
           else {
             var epickey = issues[i].fields.customfield_10800
@@ -668,7 +733,22 @@ function loadingChainFinalSteps (passback) {
   passback.callback.OKcallback.method({msg: 'OK'}, passback.callback.OKcallback.params)
 }
 
-function getSprintDataFromJIRAString (jiraString) {
+function caculateEpicsInSprint (sprintID, state) {
+  return function () {
+    var epicArray = Object.keys(state.issues).map(function (key) { return state.issues[key] }).filter(function (curEpicIssue) {
+      if (curEpicIssue.issuetype !== 'Epic') return false
+      var storysInThisEpicAndSprintArray = Object.keys(state.issues).map(function (key) { return state.issues[key] }).filter(function (curIssue) {
+        if (curIssue.issuetype !== 'Story') return false
+        if (curIssue.epickey !== curEpicIssue.key) return false
+        return (curIssue.sprintid === sprintID)
+      })
+      return (storysInThisEpicAndSprintArray.length !== 0)
+    })
+    return epicArray
+  }
+}
+
+function getSprintDataFromJIRAString (jiraString, forGlobalState) {
   // Return the JSON for this sprint or null
   // sprintField is something like com.atlassian.greenhopper.service.sprint.Sprint@22edc5f4[id=86,rapidViewId=89,state=ACTIVE,name=Simp Task Sprint 1,startDate=2017-07-18T15:54:08.499+01:00,endDate=2017-07-25T15:54:00.000+01:00,completeDate=<null>,sequence=86]
   // extract the ID
@@ -693,7 +773,7 @@ function getSprintDataFromJIRAString (jiraString) {
     return ret
   }
 
-  return {
+  var ret = {
     id: parseInt(gv('id')),
     name: gv('name'),
     state: gv('state'),
@@ -703,20 +783,22 @@ function getSprintDataFromJIRAString (jiraString) {
     sequence: gv('sequence'),
     hasTasks: false,
     hasStories: false,
-    epics: [],
-    epicsKeys: {}
+    epics: [], // TODO Remove
+    epicsKeys: {} // TODO Remove
   }
+  ret.getEpicsFN = caculateEpicsInSprint(ret.id, forGlobalState.state)
+
+  return ret
 }
 
-// source can either be 'Task' or 'Story'
-function getSprintID (sprintField, issueKey, forGlobalState, source, epic) {
+function getSprintID (sprintField, issueKey, forGlobalState, sourceIssueType, epickey) {
   if (sprintField === null) return null
   if (sprintField.length === 0) return null
 
   // Add all sprints we have found to forGlobalState
   var sprintInfo = null
   for (var key in sprintField) {
-    var currentSprintInfo = getSprintDataFromJIRAString(sprintField[key])
+    var currentSprintInfo = getSprintDataFromJIRAString(sprintField[key], forGlobalState)
 
     if (typeof (forGlobalState.sprints[currentSprintInfo.id]) === 'undefined') forGlobalState.sprints[currentSprintInfo.id] = currentSprintInfo
     if (sprintInfo === null) {
@@ -729,20 +811,27 @@ function getSprintID (sprintField, issueKey, forGlobalState, source, epic) {
   }
   if (sprintInfo === null) return null
 
-  if (source === 'Task') {
+  if (sourceIssueType === 'Task') {
     forGlobalState.sprints[sprintInfo.id].hasTasks = true
   }
-  else if (source === 'Story') {
+  else if (sourceIssueType === 'Story') {
     forGlobalState.sprints[sprintInfo.id].hasStories = true
   }
 
-  // Add the epic if it is not already there
-  if (typeof (epic) !== 'undefined') {
+  /* REMOVED and moved to temporary code
+  // Add the sprint to the epic if it is not already there
+  // TODO change this - we don't want to store sprints under epics
+  if (typeof (epickey) !== 'undefined') {
+    var epic = forGlobalState.issues[epickey]
+    console.log(epickey)
+    console.log(epic)
+    if (isNullOrUndefined(epic)) console.log('ERROR - bad epickey passed - ' + epickey)
     if (typeof (forGlobalState.sprints[sprintInfo.id].epicsKeys[epic.key]) === 'undefined') {
       forGlobalState.sprints[sprintInfo.id].epics.push(epic)
       forGlobalState.sprints[sprintInfo.id].epicsKeys[epic.key] = epic.key
     }
   }
+  */
 
   return sprintInfo.id
 }

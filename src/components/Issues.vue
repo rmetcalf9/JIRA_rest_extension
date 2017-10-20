@@ -96,14 +96,13 @@ export default {
       return JIRAServiceCallStore.getters.getIssueURLGenerator
     },
     issues () {
-      console.log('A')
-      mainJIRADataStore.getters.issuesArray.map(function (x) {
-        var t = x.bugsFN()
-        if (t.bugs.length > 0) {
-          console.log(x.bugsFN())
-        }
-      })
-      console.log('B')
+      // Tmp test code to execute partial function
+      // mainJIRADataStore.getters.issuesArray.map(function (x) {
+      //  var t = x.bugsFN()
+      //  if (t.bugs.length > 0) {
+      //    console.log(x.bugsFN())
+      //  }
+      // })
       return mainJIRADataStore.getters.issues
     },
     issuesArray () {

@@ -81,7 +81,9 @@ export default {
     },
     epics () {
       var x = mainJIRADataStore.getters.project.sprints[this.$route.params.sprintID]
-      if (typeof (x) === 'undefined') return mainJIRADataStore.getters.epics
+      if (typeof (x) === 'undefined') {
+        return mainJIRADataStore.getters.epics
+      }
       return x.epics
     },
     project () {
