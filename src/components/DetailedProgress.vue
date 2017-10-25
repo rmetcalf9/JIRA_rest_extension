@@ -13,7 +13,7 @@
 		    <q-collapsible v-bind:label="userStory.label_text" v-bind:style="(userStory.completed) ? 'color: green' : ''" >
 			<div>
 			  <q-list>
-			    <q-item v-for="task in userStory.tasks" :key="task.key" v-if="task.status !== 'Done'">
+			    <q-item v-for="task in userStory.tasksFN()" :key="task.key" v-if="task.status !== 'Done'">
 				  <q-item-side>
 				    <q-item-tile icon="check_box_outline_blank" />
 				  </q-item-side>
@@ -21,7 +21,7 @@
 			        {{ task.key }} ({{ task.status }}) - {{ task.summary }}
 				  </q-item-main>
 			    </q-item>
-			    <q-item v-for="task in userStory.tasks" :key="task.key" v-if="task.status === 'Done'">
+			    <q-item v-for="task in userStory.tasksFN()" :key="task.key" v-if="task.status === 'Done'">
 				  <q-item-side>
 				    <q-item-tile icon="check_box" />
 				  </q-item-side>

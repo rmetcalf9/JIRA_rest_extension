@@ -88,32 +88,32 @@ const mutations = {
         for (var userstory in epics[epic].user_stories) {
           numUserStoriesInThisEpic++
           var us = epics[epic].user_stories[userstory]
-          var newTasks = []
           var progress = us.story_points
           var summedTaskStoryPoints = 0
           var summedTaskBurnedStoryPoints = 0
-          var numTasks = 0
           var numEstimatedTasks = 0
-          for (var task in epics[epic].user_stories[userstory].tasks) {
-            numTasks++
-            if (epics[epic].user_stories[userstory].tasks[task].story_points !== null) numEstimatedTasks++
+
+          var tasksInThisStory = epics[epic].user_stories[userstory].tasksFN()
+          for (var taskID in tasksInThisStory) {
+            var task = tasksInThisStory[taskID]
+            if (task.story_points !== null) numEstimatedTasks++
             if (summedTaskStoryPoints !== null) {
-              if (epics[epic].user_stories[userstory].tasks[task].story_points === null) {
+              if (task.story_points === null) {
                 summedTaskStoryPoints = null
               }
               else {
-                if (epics[epic].user_stories[userstory].tasks[task].status === 'Done') summedTaskBurnedStoryPoints += epics[epic].user_stories[userstory].tasks[task].story_points
-                summedTaskStoryPoints += epics[epic].user_stories[userstory].tasks[task].story_points
+                if (task.status === 'Done') summedTaskBurnedStoryPoints += task.story_points
+                summedTaskStoryPoints += task.story_points
               }
             }
-            newTasks.push(epics[epic].user_stories[userstory].tasks[task])
           }
-          if (numEstimatedTasks !== numTasks) {
+
+          if (numEstimatedTasks !== tasksInThisStory.length) {
             if (us.sprintid !== null) {
               params.forGlobalState.exceptions = addException(params.forGlobalState.exceptions, epics[epic].user_stories[userstory].key, 'Story in Sprint with some but not all Tasks estimated')
             }
           }
-          if (numTasks === 0) {
+          if (tasksInThisStory.length === 0) {
             summedTaskStoryPoints = null
             epics[epic].user_stories[userstory].summedStoryPoints = us.story_points
             epics[epic].user_stories[userstory].summedBurnedStoryPoints = 0
@@ -126,12 +126,6 @@ const mutations = {
               epics[epic].user_stories[userstory].summedStoryPoints = us.story_points
             }
             epics[epic].user_stories[userstory].summedBurnedStoryPoints = summedTaskBurnedStoryPoints
-
-            newTasks = newTasks.sort(function (ak, bk) {
-              if (ak.rank === bk.rank) return 0
-              if (ak.rank < bk.rank) return -1
-              return 1
-            })
           }
 
           // Add an exception for this userstory if it is in a sprint and it's story points don't match summed story points
@@ -141,7 +135,6 @@ const mutations = {
             }
           }
 
-          epics[epic].user_stories[userstory].tasks = newTasks
           if (summedTaskStoryPoints !== null) {
             if (summedTaskStoryPoints !== 0) {
               progress = summedTaskBurnedStoryPoints + '/' + summedTaskStoryPoints + ' '
@@ -454,6 +447,21 @@ const actions = {
   }
 }
 
+// Partial function for use inside Story
+function caculateTasksInStory (story, state) {
+  return function () {
+    if (story.issuetype !== 'Story') {
+      console.log('Warning caculateTasksInStory called but not issue passed is not a story')
+      console.log(story)
+      return []
+    }
+    return state.issuesArray.filter(function (curIssue) {
+      if (curIssue.issuetype !== 'Task') return false
+      return (curIssue.associatedStoryKey === story.key)
+    })
+  }
+}
+
 // Partial function for use inside Issue structure
 function caculateBugsInIssue (issue, state) {
   return function () {
@@ -544,6 +552,7 @@ function loadIssues (commit, forGlobalState, callbackIn) {
             sprintid: getSprintID(issues[i].fields.customfield_10501, issues[i].key, forGlobalState, issues[i].fields.issuetype.name, epickey)
           }
           thisIssue.bugsFN = caculateBugsInIssue(thisIssue, forGlobalState.state)
+          thisIssue.tasksFN = caculateTasksInStory(thisIssue, forGlobalState.state)
           forGlobalState.issues[thisIssue.key] = thisIssue
         }
         loadEpics(commit, forGlobalState, callbackIn)
@@ -646,6 +655,7 @@ function addUserStories (commit, forGlobalState, callback) {
               sprintid: sprintID,
               completed: false
             }
+            userStory.tasksFN = caculateTasksInStory(forGlobalState.issues[userStorykey], forGlobalState.state)
             passback.forGlobalState.epics[epickey].user_stories[issues[i].key] = userStory
             userStoryEpicMap[userStorykey] = epickey
           }
