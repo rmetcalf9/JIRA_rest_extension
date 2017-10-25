@@ -43,12 +43,19 @@ const mutations = {
   SAVE_EPICS (state, params) {
     state.issues = params.forGlobalState.issues // direct assignment no caculations
     state.issuesArray = Object.keys(state.issues).map(function (key) { return state.issues[key] })
+    // sort the issueArray by rank
+    state.issuesArray = state.issuesArray.sort(function (ak, bk) {
+      if (ak.rank === bk.rank) return 0
+      if (ak.rank < bk.rank) return -1
+      return 1
+    })
+
     raiseBugExecptions(params.forGlobalState)
     raiseSprintExecptions(params.forGlobalState)
     raiseTaskExecptions(params.forGlobalState)
 
     state.project.sprints = params.forGlobalState.sprints
-    // Sort epics in each sprint by JIRA rank
+    // Sort epics in each sprint by JIRA rank TODO Remove this
     for (var sprintID in state.project.sprints) {
       state.project.sprints[sprintID].epics = state.project.sprints[sprintID].epics.sort(function (ak, bk) {
         if (ak.rank === bk.rank) return 0
@@ -306,7 +313,7 @@ function raiseSingleTaskExecptions (forGlobalState, task) {
 }
 
 function raiseTaskExecptions (forGlobalState) {
-  var taskArray = Object.keys(forGlobalState.issues).map(function (key) { return forGlobalState.issues[key] }).filter(function (curIssue) {
+  var taskArray = state.issuesArray.filter(function (curIssue) {
     if (curIssue.issuetype !== 'Task') return false
     return true
   })
@@ -316,7 +323,7 @@ function raiseTaskExecptions (forGlobalState) {
 }
 
 function raiseBugExecptions (forGlobalState) {
-  var bugsArray = Object.keys(forGlobalState.issues).map(function (key) { return forGlobalState.issues[key] }).filter(function (curIssue) {
+  var bugsArray = state.issuesArray.filter(function (curIssue) {
     if (curIssue.issuetype !== 'Bug') return false
     return true
   })
@@ -385,7 +392,7 @@ const getters = {
           }
         }
       }
-      var bugsOnHoldForThisEpicArray = Object.keys(state.issues).map(function (key) { return state.issues[key] }).filter(function (curIssue) {
+      var bugsOnHoldForThisEpicArray = state.issuesArray.filter(function (curIssue) {
         if (curIssue.issuetype !== 'Bug') return false
         if (curIssue.status !== 'On Hold') return false
         return (curIssue.epickey === state.epics[epic].key)
@@ -460,7 +467,7 @@ function caculateBugsInIssue (issue, state) {
       }
     }
     // state value passed is the latest, not the evaluated version when the function is partially applied
-    var bugArray = Object.keys(state.issues).map(function (key) { return state.issues[key] }).filter(function (curIssue) {
+    var bugArray = state.issuesArray.filter(function (curIssue) {
       if (curIssue.issuetype !== 'Bug') return false
       return (curIssue.epickey === issue.key)
     })
@@ -735,9 +742,9 @@ function loadingChainFinalSteps (passback) {
 
 function caculateEpicsInSprint (sprintID, state) {
   return function () {
-    var epicArray = Object.keys(state.issues).map(function (key) { return state.issues[key] }).filter(function (curEpicIssue) {
+    var epicArray = state.issuesArray.filter(function (curEpicIssue) {
       if (curEpicIssue.issuetype !== 'Epic') return false
-      var storysInThisEpicAndSprintArray = Object.keys(state.issues).map(function (key) { return state.issues[key] }).filter(function (curIssue) {
+      var storysInThisEpicAndSprintArray = state.issuesArray.filter(function (curIssue) {
         if (curIssue.issuetype !== 'Story') return false
         if (curIssue.epickey !== curEpicIssue.key) return false
         return (curIssue.sprintid === sprintID)
