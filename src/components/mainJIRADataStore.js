@@ -81,14 +81,14 @@ const mutations = {
       else {
         var epicSummedTaskStoryPoints = 0
         var epicSummedTaskBurnedStoryPoints = 0
-        for (var userstory in epics[epic].user_stories) {
+        for (var userstoryID in epics[epic].user_stories) {
           numUserStoriesInThisEpic++
-          var us = epics[epic].user_stories[userstory]
-          var progress = us.story_points
+          var userstory = epics[epic].user_stories[userstoryID]
+          var progress = userstory.story_points
           var summedTaskStoryPoints = 0
           var summedTaskBurnedStoryPoints = 0
 
-          var tasksInThisStory = epics[epic].user_stories[userstory].tasksFN()
+          var tasksInThisStory = epics[epic].user_stories[userstoryID].tasksFN()
           for (var taskID in tasksInThisStory) {
             var task = tasksInThisStory[taskID]
             if (summedTaskStoryPoints !== null) {
@@ -104,17 +104,17 @@ const mutations = {
 
           if (tasksInThisStory.length === 0) {
             summedTaskStoryPoints = null
-            epics[epic].user_stories[userstory].summedStoryPoints = us.story_points
-            epics[epic].user_stories[userstory].summedBurnedStoryPoints = 0
+            epics[epic].user_stories[userstoryID].summedStoryPoints = userstory.story_points
+            epics[epic].user_stories[userstoryID].summedBurnedStoryPoints = 0
           }
           else {
             // user story with tasks.
-            // we must use the summedTaskStoryPoints or us.story_points which ever is greater
-            epics[epic].user_stories[userstory].summedStoryPoints = summedTaskStoryPoints
-            if (us.story_points > summedTaskStoryPoints) {
-              epics[epic].user_stories[userstory].summedStoryPoints = us.story_points
+            // we must use the summedTaskStoryPoints or userstory.story_points which ever is greater
+            epics[epic].user_stories[userstoryID].summedStoryPoints = summedTaskStoryPoints
+            if (userstory.story_points > summedTaskStoryPoints) {
+              epics[epic].user_stories[userstoryID].summedStoryPoints = userstory.story_points
             }
-            epics[epic].user_stories[userstory].summedBurnedStoryPoints = summedTaskBurnedStoryPoints
+            epics[epic].user_stories[userstoryID].summedBurnedStoryPoints = summedTaskBurnedStoryPoints
           }
 
           if (summedTaskStoryPoints !== null) {
@@ -125,13 +125,13 @@ const mutations = {
             }
           }
           // var progress = '0/0 100%'
-          epics[epic].user_stories[userstory].label_text = progress + ' - ' + us.key + ' (' + us.status + ') ' + us.summary
-          epics[epic].user_stories[userstory].completed = (summedTaskBurnedStoryPoints === summedTaskStoryPoints)
+          epics[epic].user_stories[userstoryID].label_text = progress + ' - ' + userstory.key + ' (' + userstory.status + ') ' + userstory.summary
+          epics[epic].user_stories[userstoryID].completed = (summedTaskBurnedStoryPoints === summedTaskStoryPoints)
 
-          epicSummedTaskStoryPoints += epics[epic].user_stories[userstory].summedStoryPoints
-          epicSummedTaskBurnedStoryPoints += epics[epic].user_stories[userstory].summedBurnedStoryPoints
+          epicSummedTaskStoryPoints += epics[epic].user_stories[userstoryID].summedStoryPoints
+          epicSummedTaskBurnedStoryPoints += epics[epic].user_stories[userstoryID].summedBurnedStoryPoints
 
-          newUserStories.push(epics[epic].user_stories[userstory])
+          newUserStories.push(epics[epic].user_stories[userstoryID])
         }
         epics[epic].summedStoryPoints = epicSummedTaskStoryPoints
         epics[epic].summedBurnedStoryPoints = epicSummedTaskBurnedStoryPoints
