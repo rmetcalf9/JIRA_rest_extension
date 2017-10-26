@@ -102,6 +102,8 @@ export default {
         epicPercentage: []
       }
       var x = mainJIRADataStore.getters.project.sprints[this.$route.params.sprintID]
+
+      // If x is undefined we are viewing the whole project and can return totals from epics
       if (typeof (x) === 'undefined') {
         var epics = mainJIRADataStore.getters.epics
         for (var epic in epics) {
@@ -111,20 +113,25 @@ export default {
         }
         return ret
       }
+
+      // If x is defined we need to caculate epic percentages for this particular sprint
       var totalPointsSprint = 0
       var burnedPointsSprint = 0
-      for (var epic2 in x.epics) {
+      for (var curEpicID in x.epics) {
+        var curEpic = x.epics[curEpicID]
         var totalPointsEpic = 0
         var burnedPointsEpic = 0
-        for (var storyKey in x.epics[epic2].user_stories) {
-          if (x.epics[epic2].user_stories[storyKey].sprintid === parseInt(this.$route.params.sprintID)) {
-            totalPointsEpic += x.epics[epic2].user_stories[storyKey].summedStoryPoints
-            burnedPointsEpic += x.epics[epic2].user_stories[storyKey].summedBurnedStoryPoints
+        var userStoriesInCurEpic = curEpic.storiesFN()
+        var tt = this
+        userStoriesInCurEpic.map(function (story) {
+          if (story.sprintid === parseInt(tt.$route.params.sprintID)) {
+            totalPointsEpic += story.postLoadCaculated.summedStoryPoints
+            burnedPointsEpic += story.postLoadCaculated.summedBurnedStoryPoints
           }
-        }
+        })
         var epicPercentage2 = 0
         if ((totalPointsEpic) !== 0) epicPercentage2 = (Math.round(100 * burnedPointsEpic / totalPointsEpic))
-        ret.epicPercentage[x.epics[epic2].key] = epicPercentage2
+        ret.epicPercentage[curEpic.key] = epicPercentage2
         totalPointsSprint += totalPointsEpic
         burnedPointsSprint += burnedPointsEpic
       }

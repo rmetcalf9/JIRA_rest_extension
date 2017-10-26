@@ -557,6 +557,21 @@ const actions = {
   }
 }
 
+// Partial function for use inside Epic
+function caculateStoriesInEpic (epic, state) {
+  return function () {
+    if (epic.issuetype !== 'Epic') {
+      console.log('Warning caculateStoriesInEpic called but not issue passed is not an epic')
+      console.log(epic)
+      return []
+    }
+    return state.issuesArray.filter(function (curIssue) {
+      if (curIssue.issuetype !== 'Story') return false
+      return (curIssue.epickey === epic.key)
+    })
+  }
+}
+
 // Partial function for use inside Story
 function caculateTasksInStory (story, state) {
   return function () {
@@ -663,6 +678,7 @@ function loadIssues (commit, forGlobalState, callbackIn) {
           }
           thisIssue.bugsFN = caculateBugsInIssue(thisIssue, forGlobalState.state)
           thisIssue.tasksFN = caculateTasksInStory(thisIssue, forGlobalState.state)
+          thisIssue.storiesFN = caculateStoriesInEpic(thisIssue, forGlobalState.state)
           forGlobalState.issues[thisIssue.key] = thisIssue
         }
         loadEpics(commit, forGlobalState, callbackIn)
@@ -696,8 +712,10 @@ function loadEpics (commit, forGlobalState, callbackIn) {
             summedStoryPoints: 0,
             summedBurnedStoryPoints: 0,
             rank: issues[i].fields.customfield_11000,
-            bugs: {}
+            bugs: {},
+            issuetype: 'Epic'
           }
+          forGlobalState.epics[issues[i].key].storiesFN = caculateStoriesInEpic(forGlobalState.epics[issues[i].key], forGlobalState.state)
         }
         // We have now collected all the epics
         // now query user stories
