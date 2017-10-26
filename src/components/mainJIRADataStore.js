@@ -50,11 +50,6 @@ const mutations = {
       return 1
     })
 
-    raiseBugExecptions(params.forGlobalState)
-    raiseSprintExecptions(params.forGlobalState)
-    raiseTaskExecptions(params.forGlobalState)
-    raiseStoryExecptions(params.forGlobalState)
-
     state.project.sprints = params.forGlobalState.sprints
     // Sort epics in each sprint by JIRA rank TODO Remove this
     for (var sprintID in state.project.sprints) {
@@ -220,6 +215,11 @@ const mutations = {
         return issue
       }
     )
+
+    raiseBugExecptions(params.forGlobalState)
+    raiseSprintExecptions(params.forGlobalState)
+    raiseTaskExecptions(params.forGlobalState)
+    raiseStoryExecptions(params.forGlobalState)
   },
   SAVE_JIRADATA (state, params) {
     state.srcJiraData = params.srcJiraData
@@ -228,11 +228,60 @@ const mutations = {
 
 function caculateIssuePostLoadValues (issue) {
   if (issue.issuetype === 'Story') {
+    var summedStoryPoints = 0
+    var summedBurnedStoryPoints = 0
+    var summedTaskStoryPoints = 0
+    var summedTaskBurnedStoryPoints = 0
+
+    var tasksInThisStory = issue.tasksFN()
+    for (var taskID in tasksInThisStory) {
+      var task = tasksInThisStory[taskID]
+      if (summedTaskStoryPoints !== null) {
+        if (task.story_points === null) {
+          summedTaskStoryPoints = null
+        }
+        else {
+          if (task.status === 'Done') summedTaskBurnedStoryPoints += task.story_points
+          summedTaskStoryPoints += task.story_points
+        }
+      }
+    }
+
+    if (tasksInThisStory.length === 0) {
+      summedTaskStoryPoints = null
+      summedStoryPoints = issue.story_points
+      summedBurnedStoryPoints = 0
+    }
+    else {
+      // user story with tasks.
+      // we must use the summedTaskStoryPoints or issue.story_points which ever is greater
+      summedStoryPoints = summedTaskStoryPoints
+      if (issue.story_points > summedTaskStoryPoints) {
+        summedStoryPoints = issue.story_points
+      }
+      summedBurnedStoryPoints = summedTaskBurnedStoryPoints
+    }
+
+    var labelText = 'X'
+    var completed = false
+    var progress = issue.story_points
+    if (progress === null) progress = 0
+    if (summedTaskStoryPoints !== null) {
+      if (summedTaskStoryPoints !== 0) {
+        progress = summedTaskBurnedStoryPoints + '/' + summedTaskStoryPoints + ' '
+        progress += Math.round((summedTaskBurnedStoryPoints * 100) / summedTaskStoryPoints)
+        progress += '%'
+      }
+    }
+    // var progress = '0/0 100%'
+    labelText = progress + ' - ' + issue.key + ' (' + issue.status + ') ' + issue.summary
+    completed = (summedTaskBurnedStoryPoints === summedTaskStoryPoints)
+
     return {
-      summedStoryPoints: 0,
-      summedBurnedStoryPoints: 0,
-      labelText: 'XX',
-      completed: false
+      summedStoryPoints: summedStoryPoints,
+      summedBurnedStoryPoints: summedBurnedStoryPoints,
+      labelText: labelText,
+      completed: completed
     }
   }
   return {}
