@@ -74,7 +74,6 @@ const mutations = {
 
     for (var epic in epics) {
       var numUserStoriesInThisEpic = 0
-      var newUserStories = []
       if (typeof (epics[epic].key) === 'undefined') {
         console.log('ERROR Epic with Undefined key')
       }
@@ -84,11 +83,11 @@ const mutations = {
         for (var userstoryID in epics[epic].user_stories) {
           numUserStoriesInThisEpic++
           var userstory = epics[epic].user_stories[userstoryID]
-          var progress = userstory.story_points
+
+          // TODO once epic postload caculation is implemented this code can be removed
           var summedTaskStoryPoints = 0
           var summedTaskBurnedStoryPoints = 0
-
-          var tasksInThisStory = epics[epic].user_stories[userstoryID].tasksFN()
+          var tasksInThisStory = userstory.tasksFN()
           for (var taskID in tasksInThisStory) {
             var task = tasksInThisStory[taskID]
             if (summedTaskStoryPoints !== null) {
@@ -104,46 +103,25 @@ const mutations = {
 
           if (tasksInThisStory.length === 0) {
             summedTaskStoryPoints = null
-            epics[epic].user_stories[userstoryID].summedStoryPoints = userstory.story_points
-            epics[epic].user_stories[userstoryID].summedBurnedStoryPoints = 0
+            userstory.summedStoryPoints = userstory.story_points
+            userstory.summedBurnedStoryPoints = 0
           }
           else {
             // user story with tasks.
             // we must use the summedTaskStoryPoints or userstory.story_points which ever is greater
-            epics[epic].user_stories[userstoryID].summedStoryPoints = summedTaskStoryPoints
+            userstory.summedStoryPoints = summedTaskStoryPoints
             if (userstory.story_points > summedTaskStoryPoints) {
-              epics[epic].user_stories[userstoryID].summedStoryPoints = userstory.story_points
+              userstory.summedStoryPoints = userstory.story_points
             }
-            epics[epic].user_stories[userstoryID].summedBurnedStoryPoints = summedTaskBurnedStoryPoints
+            userstory.summedBurnedStoryPoints = summedTaskBurnedStoryPoints
           }
 
-          if (summedTaskStoryPoints !== null) {
-            if (summedTaskStoryPoints !== 0) {
-              progress = summedTaskBurnedStoryPoints + '/' + summedTaskStoryPoints + ' '
-              progress += Math.round((summedTaskBurnedStoryPoints * 100) / summedTaskStoryPoints)
-              progress += '%'
-            }
-          }
-          // var progress = '0/0 100%'
-          epics[epic].user_stories[userstoryID].label_text = progress + ' - ' + userstory.key + ' (' + userstory.status + ') ' + userstory.summary
-          epics[epic].user_stories[userstoryID].completed = (summedTaskBurnedStoryPoints === summedTaskStoryPoints)
-
-          epicSummedTaskStoryPoints += epics[epic].user_stories[userstoryID].summedStoryPoints
-          epicSummedTaskBurnedStoryPoints += epics[epic].user_stories[userstoryID].summedBurnedStoryPoints
-
-          newUserStories.push(epics[epic].user_stories[userstoryID])
+          // TODO Move to post load caculation for epic
+          epicSummedTaskStoryPoints += userstory.summedStoryPoints
+          epicSummedTaskBurnedStoryPoints += userstory.summedBurnedStoryPoints
         }
         epics[epic].summedStoryPoints = epicSummedTaskStoryPoints
         epics[epic].summedBurnedStoryPoints = epicSummedTaskBurnedStoryPoints
-
-        if (numUserStoriesInThisEpic > 1) {
-          newUserStories = newUserStories.sort(function (ak, bk) {
-            if (ak.rank === bk.rank) return 0
-            if (ak.rank < bk.rank) return -1
-            return 1
-          })
-        }
-        epics[epic].user_stories = newUserStories
 
         state.epics.push(epics[epic])
 
@@ -202,8 +180,18 @@ const mutations = {
     // **TMP CODE END
 
     // Add the postloadcaculated elements
-    state.issuesArray.map(
+    //  process these in the order Task -> Story -> Bug -> Epic
+    state.issuesArray.sort(
+      function (a, b) {
+        var aa = getPostLoadCaclProcessOrder(a)
+        var bb = getPostLoadCaclProcessOrder(b)
+        if (aa < bb) return -1
+        if (aa === bb) return 0
+        return 1
+      }
+    ).map(
       function (issue) {
+        // console.log('Caculating ' + issue.issuetype)
         issue.postLoadCaculated = caculateIssuePostLoadValues(issue)
         return issue
       }
@@ -219,6 +207,16 @@ const mutations = {
   }
 }
 
+function getPostLoadCaclProcessOrder (issue) {
+  if (issue.issuetype === 'Epic') return 900
+  if (issue.issuetype === 'Bug') return 800
+  if (issue.issuetype === 'Story') return 700
+  if (issue.issuetype === 'Task') return 600
+  console.log('Unknown issue type ' + issue.issuetype)
+  return 0
+}
+
+// called in the order order Task -> Story -> Bug -> Epic
 function caculateIssuePostLoadValues (issue) {
   if (issue.issuetype === 'Story') {
     var summedStoryPoints = 0
