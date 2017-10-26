@@ -329,6 +329,16 @@ function raiseStoryExecptions (forGlobalState) {
         forGlobalState.exceptions = addException(forGlobalState.exceptions, issue.key, 'Story in sprint but estimate (' + issue.story_points + ') dosen\'t match sum of task story points (' + issue.postLoadCaculated.summedStoryPoints + ')')
       }
     }
+    if (typeof (issue.epickey) !== 'string') {
+      forGlobalState.exceptions = addException(forGlobalState.exceptions, issue.key, 'User story with no Epic set')
+    }
+    if (isNullOrUndefined(issue.story_points)) {
+      if (issue.status !== 'Open') {
+        if (issue.status !== 'Done Criteria Established') {
+          forGlobalState.exceptions = addException(forGlobalState.exceptions, issue.key, 'User Story without estimate (Status: ' + issue.status + ')')
+        }
+      }
+    }
   })
 }
 
@@ -721,20 +731,10 @@ function addUserStories (commit, forGlobalState, callback) {
         var userStoryEpicMap = []
         for (var i = 0; i < issues.length; i++) {
           var epickey = issues[i].fields.customfield_10800
-          if (typeof (epickey) !== 'string') {
-            passback.forGlobalState.exceptions = addException(passback.forGlobalState.exceptions, issues[i].key, 'User story with no Epic set')
-          }
-          else {
+          if (typeof (epickey) === 'string') {
             var userStorykey = issues[i].key
             var storyPoints = 0
-            if (issues[i].fields.customfield_10004 == null) {
-              if (issues[i].fields.status.name !== 'Open') {
-                if (issues[i].fields.status.name !== 'Done Criteria Established') {
-                  passback.forGlobalState.exceptions = addException(passback.forGlobalState.exceptions, issues[i].key, 'User Story without estimate (Status: ' + issues[i].fields.status.name + ')')
-                }
-              }
-            }
-            else {
+            if (issues[i].fields.customfield_10004 != null) {
               storyPoints = issues[i].fields.customfield_10004
             }
             var sprintID = getSprintID(issues[i].fields.customfield_10501, issues[i].key, passback.forGlobalState, 'Story', epickey)
