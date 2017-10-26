@@ -480,15 +480,16 @@ const getters = {
   blockages: (state, getters) => {
     var returnValue = []
     // TODO Move to using Issues
-    for (var epic in state.epics) {
-      for (var userStory in state.epics[epic].user_stories) {
-        var tasksInThisStory = state.epics[epic].user_stories[userStory].tasksFN()
+    for (var epicID in state.epics) {
+      var epic = state.epics[epicID]
+      for (var userStory in epic.user_stories) {
+        var tasksInThisStory = epic.user_stories[userStory].tasksFN()
         for (var taskID in tasksInThisStory) {
           var task = tasksInThisStory[taskID]
           if (task.status === 'On Hold') {
             returnValue.push({
-              Epic: { key: state.epics[epic].key, name: state.epics[epic].name },
-              Story: { key: state.epics[epic].user_stories[userStory].key, summary: state.epics[epic].user_stories[userStory].summary },
+              Epic: { key: epic.key, name: epic.name },
+              Story: { key: epic.user_stories[userStory].key, summary: epic.user_stories[userStory].summary },
               Task: task
             })
           }
@@ -497,12 +498,12 @@ const getters = {
       var bugsOnHoldForThisEpicArray = state.issuesArray.filter(function (curIssue) {
         if (curIssue.issuetype !== 'Bug') return false
         if (curIssue.status !== 'On Hold') return false
-        return (curIssue.epickey === state.epics[epic].key)
+        return (curIssue.epickey === epic.key)
       })
       for (var bugID in bugsOnHoldForThisEpicArray) {
         var bug = bugsOnHoldForThisEpicArray[bugID]
         returnValue.push({
-          Epic: { key: state.epics[epic].key, name: state.epics[epic].name },
+          Epic: { key: epic.key, name: epic.name },
           Story: { key: 'BUG', summary: 'None (Bug)' },
           Task: bug
         })
