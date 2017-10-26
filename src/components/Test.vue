@@ -22,6 +22,11 @@ export default {
   },
   computed: {
     epic_data () {
+      mainJIRADataStore.getters.issuesArray.map(function (issue) {
+        if (issue.issuetype === 'Story') {
+          console.log(issue.key + ':' + issue.summedStoryPoints + ':' + issue.postLoadCaculated.summedStoryPoints)
+        }
+      })
       return mainJIRADataStore.state.tmp
     },
     loading_state_txt () {

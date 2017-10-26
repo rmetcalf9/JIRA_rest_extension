@@ -53,6 +53,7 @@ const mutations = {
     raiseBugExecptions(params.forGlobalState)
     raiseSprintExecptions(params.forGlobalState)
     raiseTaskExecptions(params.forGlobalState)
+    raiseStoryExecptions(params.forGlobalState)
 
     state.project.sprints = params.forGlobalState.sprints
     // Sort epics in each sprint by JIRA rank TODO Remove this
@@ -91,12 +92,10 @@ const mutations = {
           var progress = us.story_points
           var summedTaskStoryPoints = 0
           var summedTaskBurnedStoryPoints = 0
-          var numEstimatedTasks = 0
 
           var tasksInThisStory = epics[epic].user_stories[userstory].tasksFN()
           for (var taskID in tasksInThisStory) {
             var task = tasksInThisStory[taskID]
-            if (task.story_points !== null) numEstimatedTasks++
             if (summedTaskStoryPoints !== null) {
               if (task.story_points === null) {
                 summedTaskStoryPoints = null
@@ -108,11 +107,6 @@ const mutations = {
             }
           }
 
-          if (numEstimatedTasks !== tasksInThisStory.length) {
-            if (us.sprintid !== null) {
-              params.forGlobalState.exceptions = addException(params.forGlobalState.exceptions, epics[epic].user_stories[userstory].key, 'Story in Sprint with some but not all Tasks estimated')
-            }
-          }
           if (tasksInThisStory.length === 0) {
             summedTaskStoryPoints = null
             epics[epic].user_stories[userstory].summedStoryPoints = us.story_points
@@ -218,10 +212,30 @@ const mutations = {
       // console.log(epicsInThisSprint)
     }
     // **TMP CODE END
+
+    // Add the postloadcaculated elements
+    state.issuesArray.map(
+      function (issue) {
+        issue.postLoadCaculated = caculateIssuePostLoadValues(issue)
+        return issue
+      }
+    )
   },
   SAVE_JIRADATA (state, params) {
     state.srcJiraData = params.srcJiraData
   }
+}
+
+function caculateIssuePostLoadValues (issue) {
+  if (issue.issuetype === 'Story') {
+    return {
+      summedStoryPoints: 0,
+      summedBurnedStoryPoints: 0,
+      labelText: 'XX',
+      completed: false
+    }
+  }
+  return {}
 }
 
 // TASK REM START
@@ -253,6 +267,22 @@ function isNullOrUndefined (varr) {
   if (varr === null) return true
   if (typeof (varr) === 'undefined') return true
   return false
+}
+
+function raiseStoryExecptions (forGlobalState) {
+  state.issuesArray.filter(function (curIssue) {
+    return (curIssue.issuetype === 'Story')
+  }).map(function (issue) {
+    var hasNotEstimatedTasks = false
+    issue.tasksFN().map(function (task) {
+      if (task.story_points === null) hasNotEstimatedTasks = true
+    })
+    if (issue.sprintid !== null) {
+      if (hasNotEstimatedTasks) {
+        forGlobalState.exceptions = addException(forGlobalState.exceptions, issue.key, 'Story in Sprint with some but not all Tasks estimated')
+      }
+    }
+  })
 }
 
 function raiseSingleTaskExecptions (forGlobalState, task) {
