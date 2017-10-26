@@ -479,22 +479,22 @@ const getters = {
   },
   blockages: (state, getters) => {
     var returnValue = []
-    // TODO Move to using Issues
+    // TODO Refactor to take epics from issues
     for (var epicID in state.epics) {
       var epic = state.epics[epicID]
-      for (var userStory in epic.user_stories) {
-        var tasksInThisStory = epic.user_stories[userStory].tasksFN()
+      epic.storiesFN().map(function (story) {
+        var tasksInThisStory = story.tasksFN()
         for (var taskID in tasksInThisStory) {
           var task = tasksInThisStory[taskID]
           if (task.status === 'On Hold') {
             returnValue.push({
               Epic: { key: epic.key, name: epic.name },
-              Story: { key: epic.user_stories[userStory].key, summary: epic.user_stories[userStory].summary },
+              Story: { key: story.key, summary: story.summary },
               Task: task
             })
           }
         }
-      }
+      })
       var bugsOnHoldForThisEpicArray = state.issuesArray.filter(function (curIssue) {
         if (curIssue.issuetype !== 'Bug') return false
         if (curIssue.status !== 'On Hold') return false
