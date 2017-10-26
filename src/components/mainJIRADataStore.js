@@ -191,7 +191,7 @@ const mutations = {
     state.project.bugsBlocked = projectSummedbugsBlocked
     state.project.bugsResolved = projectSummedbugsResolved
 
-    state.exceptions = params.forGlobalState.exceptions
+    state.exceptions = params.forGlobalState.exceptions // This line needs to remain and be last in process
     state.stories = params.forGlobalState.stories
 
     // Sort the epics by JIRA rank
@@ -260,24 +260,44 @@ function raiseSingleTaskExecptions (forGlobalState, task) {
     forGlobalState.exceptions = addException(forGlobalState.exceptions, task.key, 'Task without userstorykey set')
     return
   }
-  var story = forGlobalState.issues[task.associatedStoryKey]
   if (isNullOrUndefined(task.associatedStoryKey)) {
     forGlobalState.exceptions = addException(forGlobalState.exceptions, task.key, 'Task with invalid userstorykey ' + task.associatedStoryKey)
+  }
+  var story = forGlobalState.issues[task.associatedStoryKey]
+  if (isNullOrUndefined(story)) {
+    forGlobalState.exceptions = addException(forGlobalState.exceptions, task.key, 'Task has associated user story can\'t be found (' + task.associatedStoryKey + ')')
+    return
   }
 
   var storyEpicKeyText = 'Undefined'
   if (typeof (task.associatedStoryKey) !== 'undefined') {
-    storyEpicKeyText = getEpicString(forGlobalState, forGlobalState.issues[task.associatedStoryKey].epickey)
-  }
-  if (isNullOrUndefined(task.epickey)) {
-    forGlobalState.exceptions = addException(forGlobalState.exceptions, task.key, 'Task has no epic set (Story epic is ' + storyEpicKeyText + ')')
-  }
-  else {
-    if (task.epickey !== story.epickey) {
-      var taskEpicKeyText = getEpicString(forGlobalState, task.epickey)
-      forGlobalState.exceptions = addException(forGlobalState.exceptions, task.key, 'Task is not in same epic as story (Task epic is ' + taskEpicKeyText + ', story epic is  ' + storyEpicKeyText + ')')
+    if (typeof (forGlobalState.issues[task.associatedStoryKey]) === 'undefined') {
+      console.log('************')
+    }
+    else {
+      storyEpicKeyText = getEpicString(forGlobalState, story.epickey)
     }
   }
+  if (isNullOrUndefined(task.epickey)) {
+    forGlobalState.exceptions = addException(forGlobalState.exceptions, task.key, 'Task has no epic set (Try changing to story epic - ' + storyEpicKeyText + ')')
+  }
+  else {
+    // check if epickey is valid
+    if (typeof (forGlobalState.issues[task.epickey]) === 'undefined') {
+      // I am not sure if JIRA allows this
+      forGlobalState.exceptions = addException(forGlobalState.exceptions, task.key, 'Task epic not found (' + task.epickey + ' - Is it in this project?)')
+    }
+    else {
+      if (task.epickey !== story.epickey) {
+        var taskEpicKeyText = getEpicString(forGlobalState, task.epickey)
+        forGlobalState.exceptions = addException(forGlobalState.exceptions, task.key, 'Task is not in same epic as story (Task epic is ' + taskEpicKeyText + ', story epic is  ' + storyEpicKeyText + ')')
+      }
+    }
+  }
+
+  // We already have an exception for invalid story key
+  // no further checks not runnable
+  if (typeof (story) === 'undefined') return
 
   var storyDate = new Date('31-DEC-4712')
   var taskDate = new Date('31-DEC-4712')
@@ -375,12 +395,14 @@ const getters = {
     // TODO Move to using Issues
     for (var epic in state.epics) {
       for (var userStory in state.epics[epic].user_stories) {
-        for (var task in state.epics[epic].user_stories[userStory].tasks) {
-          if (state.epics[epic].user_stories[userStory].tasks[task].status === 'On Hold') {
+        var tasksInThisStory = state.epics[epic].user_stories[userStory].tasksFN()
+        for (var taskID in tasksInThisStory) {
+          var task = tasksInThisStory[taskID]
+          if (task.status === 'On Hold') {
             returnValue.push({
               Epic: { key: state.epics[epic].key, name: state.epics[epic].name },
               Story: { key: state.epics[epic].user_stories[userStory].key, summary: state.epics[epic].user_stories[userStory].summary },
-              Task: state.epics[epic].user_stories[userStory].tasks[task]
+              Task: task
             })
           }
         }
@@ -660,7 +682,7 @@ function addUserStories (commit, forGlobalState, callback) {
             userStoryEpicMap[userStorykey] = epickey
           }
         }
-        addTasks(passback.commit, userStoryEpicMap, passback.callback, passback.forGlobalState)
+        loadingChainFinalSteps(passback)
       },
       params: {commit: commit, callback: callback, forGlobalState: forGlobalState}
     },
@@ -681,66 +703,6 @@ function addException (exceptions, key, msg) {
     msg: msg
   })
   return exceptions
-}
-
-function addTasks (commit, userStoryEpicMap, callback, forGlobalState) {
-  var callback2 = {
-    OKcallback: {
-      method: function (issues, passback) {
-        // console.log('Task query response')
-        // console.log(issues)
-        for (var i = 0; i < issues.length; i++) {
-          // ignoring epic in task, epic looked up based on user story
-          if ((typeof (issues[i].fields.customfield_11101) === 'undefined') || (issues[i].fields.customfield_11101 === null)) {
-            // Exception moved
-          }
-          else {
-            var epickey = issues[i].fields.customfield_10800
-            if (typeof (epickey) !== 'string') {
-              epickey = undefined
-            }
-            for (var j = 0; j < issues[i].fields.customfield_11101.length; j++) {
-              var userStoryKey = issues[i].fields.customfield_11101[j]
-              if (typeof (userStoryKey) === 'undefined') {
-                passback.forGlobalState.exceptions = addException(passback.forGlobalState.exceptions, issues[i].key, 'Task without invalid userstorykey set')
-              }
-              else {
-                var epicKey = userStoryEpicMap[userStoryKey]
-                if (typeof (epicKey) === 'undefined') {
-                  passback.forGlobalState.exceptions = addException(passback.forGlobalState.exceptions, issues[i].key, 'Task has invalid asosicated user story (' + userStoryKey + ' - is it actually a user story???)')
-                }
-                else {
-                  passback.forGlobalState.epics[epicKey].user_stories[userStoryKey].tasks[issues[i].key] = {
-                    id: issues[i].id,
-                    key: issues[i].key,
-                    summary: issues[i].fields.summary,
-                    description: issues[i].fields.description,
-                    epickey: epickey,
-                    status: issues[i].fields.status.name,
-                    story_points: issues[i].fields.customfield_10004,
-                    rank: issues[i].fields.customfield_11000,
-                    sprintid: getSprintID(issues[i].fields.customfield_10501, issues[i].key, passback.forGlobalState, 'Task', undefined),
-                    assignee: issues[i].fields.assignee
-                  }
-                }
-              }
-            } // if custom field
-            // console.log(epicKey + ':' + userStoryKey)
-          }
-        }
-        loadingChainFinalSteps(passback)
-      },
-      params: {commit: commit, callback: callback, forGlobalState: forGlobalState}
-    },
-    FAILcallback: {
-      method: loadDataErrorFn,
-      params: {commit: commit, callback: callback}
-    }
-  }
-  JIRAServiceCallStore.dispatch('query', {
-    jql: jqlArgumentUtils.getIssueRetervialJQL(forGlobalState.state.srcJiraData.taskProjects, ['Task']),
-    callback: callback2
-  })
 }
 
 function loadingChainFinalSteps (passback) {
