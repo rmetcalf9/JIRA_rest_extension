@@ -117,13 +117,6 @@ const mutations = {
             epics[epic].user_stories[userstory].summedBurnedStoryPoints = summedTaskBurnedStoryPoints
           }
 
-          // Add an exception for this userstory if it is in a sprint and it's story points don't match summed story points
-          if (us.sprintid !== null) {
-            if (summedTaskStoryPoints !== us.story_points) {
-              params.forGlobalState.exceptions = addException(params.forGlobalState.exceptions, epics[epic].user_stories[userstory].key, 'Story in sprint but estimate (' + us.story_points + ') dosen\'t match sum of task story points (' + summedTaskStoryPoints + ')')
-            }
-          }
-
           if (summedTaskStoryPoints !== null) {
             if (summedTaskStoryPoints !== 0) {
               progress = summedTaskBurnedStoryPoints + '/' + summedTaskStoryPoints + ' '
@@ -329,6 +322,11 @@ function raiseStoryExecptions (forGlobalState) {
     if (issue.sprintid !== null) {
       if (hasNotEstimatedTasks) {
         forGlobalState.exceptions = addException(forGlobalState.exceptions, issue.key, 'Story in Sprint with some but not all Tasks estimated')
+      }
+
+      // Add an exception for this userstory if it is in a sprint and it's story points don't match summed story points
+      if (issue.postLoadCaculated.summedStoryPoints !== issue.story_points) {
+        forGlobalState.exceptions = addException(forGlobalState.exceptions, issue.key, 'Story in sprint but estimate (' + issue.story_points + ') dosen\'t match sum of task story points (' + issue.postLoadCaculated.summedStoryPoints + ')')
       }
     }
   })
