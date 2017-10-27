@@ -4,6 +4,10 @@ import Vuex from 'vuex'
 import JIRAServiceCallStore from './JIRAServiceCallStore'
 import jqlArgumentUtils from './jqlArgumentUtils'
 
+// TODO Put epic function into sprints
+// changed detialed progress sprint view to use epic function
+// remove epics from load chain
+
 // Main state for this store
 const state = {
   state: 0, // 0 = CREATED, 1 = LOADING, 2 = LOADED, 3 = ERROR
@@ -623,7 +627,8 @@ function loadIssues (commit, forGlobalState, callbackIn) {
           thisIssue.storiesFN = caculateStoriesInEpic(thisIssue, forGlobalState.state)
           forGlobalState.issues[thisIssue.key] = thisIssue
         }
-        loadEpics(commit, forGlobalState, callbackIn)
+        loadEpics(commit, forGlobalState, callbackIn) // TODO Delete once sprints are fixed
+        // loadingChainFinalSteps({commit: commit, callback: callbackIn, forGlobalState: forGlobalState})
       },
       params: {}
     },
