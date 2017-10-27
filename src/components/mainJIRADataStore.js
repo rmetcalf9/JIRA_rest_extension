@@ -9,7 +9,6 @@ const state = {
   state: 0, // 0 = CREATED, 1 = LOADING, 2 = LOADED, 3 = ERROR
   issues: {}, // Map of issues so we can lookup
   issuesArray: [], // Array of issues
-  epics: [], // TODO Remove
   exceptions: [],
   project: {
     progressPercantage: 0,
@@ -102,7 +101,6 @@ const mutations = {
       bugsResolved: 0
     }
     state.project = state.issuesArray.filter(function (issue) { return issue.issuetype === 'Epic' }).reduce(function (sum, epic) {
-      console.log(epic)
       return {
         numUserStories: sum.numUserStories + epic.postLoadCaculated.totalUserStories,
         numPoints: sum.numPoints + epic.postLoadCaculated.summedStoryPoints,
@@ -663,7 +661,7 @@ function loadEpics (commit, forGlobalState, callbackIn) {
         }
         // We have now collected all the epics
         // now query user stories
-        addUserStories(passback.commit, forGlobalState, passback.callback)
+        loadingChainFinalSteps({commit: passback.commit, callback: passback.callback, forGlobalState: forGlobalState})
       },
       params: {state: state, commit: commit, callback: callbackIn}
     },
@@ -683,58 +681,6 @@ function loadDataErrorFn (retData, passback) {
   console.log(retData)
   passback.commit('ERRORED_LOADING')
   passback.callback.FAILcallback.method(retData, passback.callback.FAILcallback.params)
-}
-
-function addUserStories (commit, forGlobalState, callback) {
-  var callback2 = {
-    OKcallback: {
-      method: function (issues, passback) {
-        // console.log('User story query response')
-        // console.log(issues)
-        var userStoryEpicMap = []
-        for (var i = 0; i < issues.length; i++) {
-          var epickey = issues[i].fields.customfield_10800
-          if (typeof (epickey) === 'string') {
-            var userStorykey = issues[i].key
-            var storyPoints = 0
-            if (issues[i].fields.customfield_10004 != null) {
-              storyPoints = issues[i].fields.customfield_10004
-            }
-            var sprintID = getSprintID(issues[i].fields.customfield_10501, issues[i].key, passback.forGlobalState, 'Story', epickey)
-            var userStory = {
-              id: issues[i].id,
-              key: userStorykey,
-              summary: issues[i].fields.summary,
-              description: issues[i].fields.description,
-              epickey: epickey,
-              tasks: [],
-              status: issues[i].fields.status.name,
-              label_text: 'FILLED IN LATER',
-              story_points: storyPoints,
-              summedStoryPoints: 0,
-              summedBurnedStoryPoints: 0,
-              rank: issues[i].fields.customfield_11000,
-              sprintid: sprintID,
-              completed: false
-            }
-            userStory.tasksFN = caculateTasksInStory(forGlobalState.issues[userStorykey], forGlobalState.state)
-            passback.forGlobalState.epics[epickey].user_stories[issues[i].key] = userStory
-            userStoryEpicMap[userStorykey] = epickey
-          }
-        }
-        loadingChainFinalSteps(passback)
-      },
-      params: {commit: commit, callback: callback, forGlobalState: forGlobalState}
-    },
-    FAILcallback: {
-      method: loadDataErrorFn,
-      params: {commit: commit, callback: callback}
-    }
-  }
-  JIRAServiceCallStore.dispatch('query', {
-    jql: jqlArgumentUtils.getIssueRetervialJQL(forGlobalState.state.srcJiraData.storyProjects, ['Story']),
-    callback: callback2
-  })
 }
 
 function addException (exceptions, key, msg) {
@@ -836,21 +782,6 @@ function getSprintID (sprintField, issueKey, forGlobalState, sourceIssueType, ep
   else if (sourceIssueType === 'Story') {
     forGlobalState.sprints[sprintInfo.id].hasStories = true
   }
-
-  /* REMOVED and moved to temporary code
-  // Add the sprint to the epic if it is not already there
-  // TODO change this - we don't want to store sprints under epics
-  if (typeof (epickey) !== 'undefined') {
-    var epic = forGlobalState.issues[epickey]
-    console.log(epickey)
-    console.log(epic)
-    if (isNullOrUndefined(epic)) console.log('ERROR - bad epickey passed - ' + epickey)
-    if (typeof (forGlobalState.sprints[sprintInfo.id].epicsKeys[epic.key]) === 'undefined') {
-      forGlobalState.sprints[sprintInfo.id].epics.push(epic)
-      forGlobalState.sprints[sprintInfo.id].epicsKeys[epic.key] = epic.key
-    }
-  }
-  */
 
   return sprintInfo.id
 }
