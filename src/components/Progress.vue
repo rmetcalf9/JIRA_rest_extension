@@ -160,7 +160,7 @@ export default {
       newBodyString += '<th class="confluenceTh">Resolved</th>'
       newBodyString += '</tr>'
 
-      for (var epicIdx in mainJIRADataStore.getters.epics) {
+      for (var epicIdx in mainJIRADataStore.getters.epicsOLD) {
         var epic = mainJIRADataStore.getters.epics[epicIdx]
         newBodyString += '<tr>'
         newBodyString += '<td><span style="color: rgb(0,0,0);"><a href="' + issueURLGenerator(epic.key) + '" target="_new">' + epic.key + '</a> - ' + epic.name + '</span></td>'
