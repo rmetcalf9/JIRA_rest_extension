@@ -37,9 +37,6 @@ export default {
     loading_state_txt () {
       return mainJIRADataStore.getters.status_txt
     },
-    epics () {
-      return mainJIRADataStore.getters.epicsOLD
-    },
     exceptions () {
       return mainJIRADataStore.getters.exceptions
     }

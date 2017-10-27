@@ -82,7 +82,7 @@ export default {
     epics () {
       var x = mainJIRADataStore.getters.project.sprints[this.$route.params.sprintID]
       if (typeof (x) === 'undefined') {
-        return mainJIRADataStore.getters.epicsOLD
+        return mainJIRADataStore.getters.epics
       }
       return x.epics
     },
@@ -105,12 +105,12 @@ export default {
 
       // If x is undefined we are viewing the whole project and can return totals from epics
       if (typeof (x) === 'undefined') {
-        var epics = mainJIRADataStore.getters.epicsOLD
-        for (var epic in epics) {
+        mainJIRADataStore.getters.epics.map(function (epic) {
+          // console.log(epic.key)
           var epicPercentage = 0
-          if ((epics[epic].summedStoryPoints) !== 0) epicPercentage = Math.round((epics[epic].summedBurnedStoryPoints * 100) / epics[epic].summedStoryPoints)
-          ret.epicPercentage[epics[epic].key] = epicPercentage
-        }
+          if ((epic.postLoadCaculated.summedStoryPoints) !== 0) epicPercentage = Math.round((epic.postLoadCaculated.summedBurnedStoryPoints * 100) / epic.postLoadCaculated.summedStoryPoints)
+          ret.epicPercentage[epic.key] = epicPercentage
+        })
         return ret
       }
 
