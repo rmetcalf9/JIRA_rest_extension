@@ -44,6 +44,12 @@ export default {
       },
       columns: [
         {
+          label: 'JIRA Rank',
+          field: 'rank',
+          filter: true,
+          sort: strSort
+        },
+        {
           label: 'Issue Type',
           field: 'issuetype',
           filter: true,

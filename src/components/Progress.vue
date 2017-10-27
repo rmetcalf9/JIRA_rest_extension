@@ -17,14 +17,14 @@
 			<tbody>
 				<tr v-for="epic in epics">
 					<td data-th="Epic" class="text-left"><a v-bind:href="issueURLGenerator(epic.key)">{{ epic.key }}</a> - {{ epic.name }}</td>
-					<td data-th="Stories" class="text-right">{{ epic.user_stories.length }}</td>
-					<td data-th="Points" class="text-right">{{ epic.summedBurnedStoryPoints }}/{{ epic.summedStoryPoints }}</td>
-					<td data-th="Progress" class="text-right" v-if="epic.summedStoryPoints !== 0">{{ Math.round(100 * (epic.summedBurnedStoryPoints / epic.summedStoryPoints)) }}%</td>
-					<td data-th="Progress" class="text-right" v-if="epic.summedStoryPoints == 0">0%</td>
-					<td data-th="Bugs Pending" class="text-right">{{ epic.bugs.Pending }}</td>
-					<td data-th="Bugs In Progress" class="text-right">{{ epic.bugs.InProgress }}</td>
-					<td data-th="Bugs Blocked" class="text-right">{{ epic.bugs.Blocked }}</td>
-					<td data-th="Bugs Resolved" class="text-right">{{ epic.bugs.Resolved }}</td>
+					<td data-th="Stories" class="text-right">{{ epic.storiesFN().length }}</td>
+					<td data-th="Points" class="text-right">{{ epic.postLoadCaculated.summedBurnedStoryPoints }}/{{ epic.postLoadCaculated.summedStoryPoints }}</td>
+					<td data-th="Progress" class="text-right" v-if="epic.postLoadCaculated.summedStoryPoints !== 0">{{ Math.round(100 * (epic.postLoadCaculated.summedBurnedStoryPoints / epic.postLoadCaculated.summedStoryPoints)) }}%</td>
+					<td data-th="Progress" class="text-right" v-if="epic.postLoadCaculated.summedStoryPoints == 0">0%</td>
+					<td data-th="Bugs Pending" class="text-right">{{ epic.postLoadCaculated.bugs.Pending }}</td>
+					<td data-th="Bugs In Progress" class="text-right">{{ epic.postLoadCaculated.bugs.InProgress }}</td>
+					<td data-th="Bugs Blocked" class="text-right">{{ epic.postLoadCaculated.bugs.Blocked }}</td>
+					<td data-th="Bugs Resolved" class="text-right">{{ epic.postLoadCaculated.bugs.Resolved }}</td>
 				</tr>
 			</tbody>
 			<thead>
@@ -106,7 +106,7 @@ export default {
       return mainJIRADataStore.getters.status_txt
     },
     epics () {
-      return mainJIRADataStore.getters.epicsOLD
+      return mainJIRADataStore.getters.epics
     },
     exceptions () {
       return mainJIRADataStore.getters.exceptions
@@ -160,22 +160,22 @@ export default {
       newBodyString += '<th class="confluenceTh">Resolved</th>'
       newBodyString += '</tr>'
 
-      for (var epicIdx in mainJIRADataStore.getters.epicsOLD) {
+      for (var epicIdx in mainJIRADataStore.getters.epics) {
         var epic = mainJIRADataStore.getters.epics[epicIdx]
         newBodyString += '<tr>'
         newBodyString += '<td><span style="color: rgb(0,0,0);"><a href="' + issueURLGenerator(epic.key) + '" target="_new">' + epic.key + '</a> - ' + epic.name + '</span></td>'
-        newBodyString += '<td style="text-align: right;">' + epic.user_stories.length + '</td>'
-        newBodyString += '<td style="text-align: right;">' + epic.summedBurnedStoryPoints + '/' + epic.summedStoryPoints + '</td>'
-        if (epic.summedStoryPoints !== 0) {
-          newBodyString += '<td style="text-align: right;">' + Math.round(100 * (epic.summedBurnedStoryPoints / epic.summedStoryPoints)) + '%</td>'
+        newBodyString += '<td style="text-align: right;">' + epic.storiesFN().length + '</td>'
+        newBodyString += '<td style="text-align: right;">' + epic.postLoadCaculated.summedBurnedStoryPoints + '/' + epic.postLoadCaculated.summedStoryPoints + '</td>'
+        if (epic.postLoadCaculated.summedStoryPoints !== 0) {
+          newBodyString += '<td style="text-align: right;">' + Math.round(100 * (epic.postLoadCaculated.summedBurnedStoryPoints / epic.postLoadCaculated.summedStoryPoints)) + '%</td>'
         }
         else {
           newBodyString += '<td style="text-align: right;">0%</td>'
         }
-        newBodyString += '<td style="text-align: right;">' + epic.bugs.Pending + '</td>'
-        newBodyString += '<td style="text-align: right;">' + epic.bugs.InProgress + '</td>'
-        newBodyString += '<td style="text-align: right;">' + epic.bugs.Blocked + '</td>'
-        newBodyString += '<td style="text-align: right;">' + epic.bugs.Resolved + '</td>'
+        newBodyString += '<td style="text-align: right;">' + epic.postLoadCaculated.bugs.Pending + '</td>'
+        newBodyString += '<td style="text-align: right;">' + epic.postLoadCaculated.bugs.InProgress + '</td>'
+        newBodyString += '<td style="text-align: right;">' + epic.postLoadCaculated.bugs.Blocked + '</td>'
+        newBodyString += '<td style="text-align: right;">' + epic.postLoadCaculated.bugs.Resolved + '</td>'
 
         newBodyString += '</tr>'
       }

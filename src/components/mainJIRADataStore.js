@@ -29,6 +29,12 @@ const state = {
   }
 }
 
+function rankSort (ak, bk) {
+  if (ak.rank === bk.rank) return 0
+  if (ak.rank < bk.rank) return -1
+  return 1
+}
+
 const mutations = {
   START_LOADING (state) {
     state.state = 1
@@ -42,22 +48,14 @@ const mutations = {
   // Saves Epics, stories and bugs
   SAVE_EPICS (state, params) {
     state.issues = params.forGlobalState.issues // direct assignment no caculations
+    // No point sorting the array here as any filter will result in a different sort
     state.issuesArray = Object.keys(state.issues).map(function (key) { return state.issues[key] })
-    // sort the issueArray by rank
-    state.issuesArray = state.issuesArray.sort(function (ak, bk) {
-      if (ak.rank === bk.rank) return 0
-      if (ak.rank < bk.rank) return -1
-      return 1
-    })
+    // state.issuesArray.filter(function (issue) { return (issue.issuetype === 'Epic') }).map(function (issue) { console.log(issue.name) })
 
     state.project.sprints = params.forGlobalState.sprints
     // Sort epics in each sprint by JIRA rank TODO Remove this
     for (var sprintID in state.project.sprints) {
-      state.project.sprints[sprintID].epics = state.project.sprints[sprintID].epics.sort(function (ak, bk) {
-        if (ak.rank === bk.rank) return 0
-        if (ak.rank < bk.rank) return -1
-        return 1
-      })
+      state.project.sprints[sprintID].epics = state.project.sprints[sprintID].epics.sort(rankSort)
     }
 
     // Old calc code below - to be eliminates
@@ -155,11 +153,7 @@ const mutations = {
     state.stories = params.forGlobalState.stories
 
     // Sort the epics by JIRA rank
-    state.epics = state.epics.sort(function (ak, bk) {
-      if (ak.rank === bk.rank) return 0
-      if (ak.rank < bk.rank) return -1
-      return 1
-    })
+    state.epics = state.epics.sort(rankSort)
 
     // ** TMP code needed for old data structure
     // put epics into sprints
@@ -480,6 +474,9 @@ const getters = {
   issuesArray: (state, getters) => {
     return state.issuesArray
   },
+  epics: (state, getters) => {
+    return state.issuesArray.filter(function (issue) { return (issue.issuetype === 'Epic') }).sort(rankSort)
+  },
   epicsOLD: (state, getters) => {
     return state.epics
   },
@@ -583,7 +580,7 @@ function caculateStoriesInEpic (epic, state) {
     return state.issuesArray.filter(function (curIssue) {
       if (curIssue.issuetype !== 'Story') return false
       return (curIssue.epickey === epic.key)
-    })
+    }).sort(rankSort)
   }
 }
 
@@ -598,7 +595,7 @@ function caculateTasksInStory (story, state) {
     return state.issuesArray.filter(function (curIssue) {
       if (curIssue.issuetype !== 'Task') return false
       return (curIssue.associatedStoryKey === story.key)
-    })
+    }).sort(rankSort)
   }
 }
 
@@ -643,7 +640,7 @@ function caculateBugsInIssue (issue, state) {
       }
     }
     return {
-      bugs: bugArray,
+      bugs: bugArray.sort(rankSort),
       Pending: Pending,
       InProgress: InProgress,
       Blocked: Blocked,
