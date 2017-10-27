@@ -52,104 +52,6 @@ const mutations = {
     state.issuesArray = Object.keys(state.issues).map(function (key) { return state.issues[key] })
     // state.issuesArray.filter(function (issue) { return (issue.issuetype === 'Epic') }).map(function (issue) { console.log(issue.name) })
 
-    state.project.sprints = params.forGlobalState.sprints
-    // Sort epics in each sprint by JIRA rank TODO Remove this
-    for (var sprintID in state.project.sprints) {
-      state.project.sprints[sprintID].epics = state.project.sprints[sprintID].epics.sort(rankSort)
-    }
-
-    // Old calc code below - to be eliminates
-    state.epics = []
-    // var epics = params.forGlobalState.epics
-    var projectSummedTaskStoryPoints = 0
-    var projectSummedTaskBurnedStoryPoints = 0
-    var projectSummedbugsPending = 0
-    var projectSummedbugsInProgress = 0
-    var projectSummedbugsBlocked = 0
-    var projectSummedbugsResolved = 0
-
-    var numUserStoriesInThisProject = 0
-    /*
-    for (var epic in epics) {
-      var numUserStoriesInThisEpic = 0
-      if (typeof (epics[epic].key) === 'undefined') {
-        console.log('ERROR Epic with Undefined key')
-      }
-      else {
-        var epicSummedTaskStoryPoints = 0
-        var epicSummedTaskBurnedStoryPoints = 0
-        for (var userstoryID in epics[epic].user_stories) {
-          numUserStoriesInThisEpic++
-          var userstory = epics[epic].user_stories[userstoryID]
-
-          // TODO once epic postload caculation is implemented this code can be removed
-          var summedTaskStoryPoints = 0
-          var summedTaskBurnedStoryPoints = 0
-          var tasksInThisStory = userstory.tasksFN()
-          for (var taskID in tasksInThisStory) {
-            var task = tasksInThisStory[taskID]
-            if (summedTaskStoryPoints !== null) {
-              if (task.story_points === null) {
-                summedTaskStoryPoints = null
-              }
-              else {
-                if (task.status === 'Done') summedTaskBurnedStoryPoints += task.story_points
-                summedTaskStoryPoints += task.story_points
-              }
-            }
-          }
-
-          if (tasksInThisStory.length === 0) {
-            summedTaskStoryPoints = null
-            userstory.summedStoryPoints = userstory.story_points
-            userstory.summedBurnedStoryPoints = 0
-          }
-          else {
-            // user story with tasks.
-            // we must use the summedTaskStoryPoints or userstory.story_points which ever is greater
-            userstory.summedStoryPoints = summedTaskStoryPoints
-            if (userstory.story_points > summedTaskStoryPoints) {
-              userstory.summedStoryPoints = userstory.story_points
-            }
-            userstory.summedBurnedStoryPoints = summedTaskBurnedStoryPoints
-          }
-
-          // TODO Move to post load caculation for epic
-          epicSummedTaskStoryPoints += userstory.summedStoryPoints
-          epicSummedTaskBurnedStoryPoints += userstory.summedBurnedStoryPoints
-        }
-        epics[epic].summedStoryPoints = epicSummedTaskStoryPoints
-        epics[epic].summedBurnedStoryPoints = epicSummedTaskBurnedStoryPoints
-
-        state.epics.push(epics[epic])
-
-        epics[epic].bugs = state.issues[epics[epic].key].bugsFN()
-        projectSummedbugsPending += epics[epic].bugs.Pending
-        projectSummedbugsInProgress += epics[epic].bugs.InProgress
-        projectSummedbugsBlocked += epics[epic].bugs.Blocked
-        projectSummedbugsResolved += epics[epic].bugs.Resolved
-
-        projectSummedTaskStoryPoints += epicSummedTaskStoryPoints
-        projectSummedTaskBurnedStoryPoints += epicSummedTaskBurnedStoryPoints
-      }
-      numUserStoriesInThisProject += numUserStoriesInThisEpic
-    }
-    */
-    if (projectSummedTaskStoryPoints === 0) {
-      state.project.progressPercantage = 0
-    }
-    else {
-      state.project.progressPercantage = Math.round((100 * projectSummedTaskBurnedStoryPoints) / projectSummedTaskStoryPoints)
-    }
-
-    state.project.numUserStories = numUserStoriesInThisProject
-    state.project.numPoints = projectSummedTaskStoryPoints
-    state.project.numBurnedPoints = projectSummedTaskBurnedStoryPoints
-    state.project.bugsPending = projectSummedbugsPending
-    state.project.bugsInProgress = projectSummedbugsInProgress
-    state.project.bugsBlocked = projectSummedbugsBlocked
-    state.project.bugsResolved = projectSummedbugsResolved
-
     state.exceptions = params.forGlobalState.exceptions // This line needs to remain
 
     // ** TMP code needed for old data structure
@@ -188,10 +90,44 @@ const mutations = {
       }
     )
 
+    state.project = {
+      // sprints added later
+      // progressPercantage: 0 added later
+      numUserStories: 0,
+      numPoints: 0,
+      numBurnedPoints: 0,
+      bugsPending: 0,
+      bugsInProgress: 0,
+      bugsBlocked: 0,
+      bugsResolved: 0
+    }
+    state.project = state.issuesArray.filter(function (issue) { return issue.issuetype === 'Epic' }).reduce(function (sum, epic) {
+      console.log(epic)
+      return {
+        numUserStories: sum.numUserStories + epic.postLoadCaculated.totalUserStories,
+        numPoints: sum.numPoints + epic.postLoadCaculated.summedStoryPoints,
+        numBurnedPoints: sum.numBurnedPoints + epic.postLoadCaculated.summedBurnedStoryPoints,
+        bugsPending: sum.bugsPending + epic.postLoadCaculated.bugs.Pending,
+        bugsInProgress: sum.bugsInProgress + epic.postLoadCaculated.bugs.InProgress,
+        bugsBlocked: sum.bugsBlocked + epic.postLoadCaculated.bugs.Blocked,
+        bugsResolved: sum.bugsResolved + epic.postLoadCaculated.bugs.Resolved
+      }
+    }, state.project)
+    state.project.progressPercantage = 0
+    if (state.project.numPoints !== 0) {
+      state.project.progressPercantage = Math.round((100 * state.project.numBurnedPoints) / state.project.numPoints)
+    }
+
     raiseBugExecptions(params.forGlobalState)
     raiseSprintExecptions(params.forGlobalState)
     raiseTaskExecptions(params.forGlobalState)
     raiseStoryExecptions(params.forGlobalState)
+
+    state.project.sprints = params.forGlobalState.sprints
+    // Sort epics in each sprint by JIRA rank TODO Remove this and change to function
+    for (var sprintID in state.project.sprints) {
+      state.project.sprints[sprintID].epics = state.project.sprints[sprintID].epics.sort(rankSort)
+    }
   },
   SAVE_JIRADATA (state, params) {
     state.srcJiraData = params.srcJiraData
@@ -280,7 +216,8 @@ function caculateIssuePostLoadValues (issue) {
     return {
       summedStoryPoints: x.summedStoryPoints,
       summedBurnedStoryPoints: x.summedBurnedStoryPoints,
-      bugs: issue.bugsFN()
+      bugs: issue.bugsFN(),
+      totalUserStories: issue.storiesFN().length
     }
   }
   return {}
