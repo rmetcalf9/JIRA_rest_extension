@@ -275,6 +275,23 @@ function caculateIssuePostLoadValues (issue) {
       completed: completed
     }
   }
+  if (issue.issuetype === 'Epic') {
+    var x = {
+      summedStoryPoints: 0,
+      summedBurnedStoryPoints: 0
+    }
+    x = issue.storiesFN().reduce(function (sum, story) {
+      return {
+        summedStoryPoints: sum.summedStoryPoints + story.postLoadCaculated.summedStoryPoints,
+        summedBurnedStoryPoints: sum.summedBurnedStoryPoints + story.postLoadCaculated.summedBurnedStoryPoints
+      }
+    }, x)
+    return {
+      summedStoryPoints: x.summedStoryPoints,
+      summedBurnedStoryPoints: x.summedBurnedStoryPoints,
+      bugs: issue.bugsFN()
+    }
+  }
   return {}
 }
 

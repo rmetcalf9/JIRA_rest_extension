@@ -87,6 +87,12 @@ export default {
           field: 'epickey',
           filter: true,
           sort: strSort
+        },
+        {
+          label: 'PostLoadCaculated',
+          field: 'postLoadCaculated',
+          filter: true,
+          sort: strSort
         }
       ]
     }

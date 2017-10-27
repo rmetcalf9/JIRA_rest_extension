@@ -24,7 +24,25 @@ export default {
     epic_data () {
       console.log('TTT')
       mainJIRADataStore.getters.issuesArray.map(function (issue) {
-        if (issue.issuetype === 'Story') {
+        if (issue.issuetype === 'Epic') {
+          var thisEpicID = -1
+          for (var epicID in mainJIRADataStore.getters.epics) {
+            if (mainJIRADataStore.getters.epics[epicID].key === issue.key) thisEpicID = epicID
+          }
+          if (thisEpicID === -1) {
+            // console.log('Invalid epic id')
+          }
+          else {
+            var thisEpic = mainJIRADataStore.getters.epics[thisEpicID]
+            var a = thisEpic.summedStoryPoints
+            var b = issue.postLoadCaculated.summedStoryPoints
+            console.log(a)
+            console.log(b)
+            if (a !== b) console.log(issue.key + ':' + a + ':' + b)
+          }
+        }
+
+        /* if (issue.issuetype === 'Story') {
           var thisEpicID = -1
           for (var epicID in mainJIRADataStore.getters.epics) {
             if (mainJIRADataStore.getters.epics[epicID].key === issue.epickey) thisEpicID = epicID
@@ -42,6 +60,7 @@ export default {
             if (a !== b) console.log(issue.key + ':' + a + ':' + b)
           }
         }
+        */
       })
       return mainJIRADataStore.state.tmp
     },
