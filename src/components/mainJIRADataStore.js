@@ -9,7 +9,7 @@ const state = {
   state: 0, // 0 = CREATED, 1 = LOADING, 2 = LOADED, 3 = ERROR
   issues: {}, // Map of issues so we can lookup
   issuesArray: [], // Array of issues
-  epics: [],
+  epics: [], // TODO Remove
   exceptions: [],
   project: {
     progressPercantage: 0,
@@ -60,7 +60,7 @@ const mutations = {
 
     // Old calc code below - to be eliminates
     state.epics = []
-    var epics = params.forGlobalState.epics
+    // var epics = params.forGlobalState.epics
     var projectSummedTaskStoryPoints = 0
     var projectSummedTaskBurnedStoryPoints = 0
     var projectSummedbugsPending = 0
@@ -69,7 +69,7 @@ const mutations = {
     var projectSummedbugsResolved = 0
 
     var numUserStoriesInThisProject = 0
-
+    /*
     for (var epic in epics) {
       var numUserStoriesInThisEpic = 0
       if (typeof (epics[epic].key) === 'undefined') {
@@ -134,6 +134,7 @@ const mutations = {
       }
       numUserStoriesInThisProject += numUserStoriesInThisEpic
     }
+    */
     if (projectSummedTaskStoryPoints === 0) {
       state.project.progressPercantage = 0
     }
@@ -149,11 +150,7 @@ const mutations = {
     state.project.bugsBlocked = projectSummedbugsBlocked
     state.project.bugsResolved = projectSummedbugsResolved
 
-    state.exceptions = params.forGlobalState.exceptions // This line needs to remain and be last in process
-    state.stories = params.forGlobalState.stories
-
-    // Sort the epics by JIRA rank
-    state.epics = state.epics.sort(rankSort)
+    state.exceptions = params.forGlobalState.exceptions // This line needs to remain
 
     // ** TMP code needed for old data structure
     // put epics into sprints
@@ -477,9 +474,6 @@ const getters = {
   epics: (state, getters) => {
     return state.issuesArray.filter(function (issue) { return (issue.issuetype === 'Epic') }).sort(rankSort)
   },
-  epicsOLD: (state, getters) => {
-    return state.epics
-  },
   exceptions: (state, getters) => {
     return state.exceptions
   },
@@ -491,9 +485,7 @@ const getters = {
   },
   blockages: (state, getters) => {
     var returnValue = []
-    // TODO Refactor to take epics from issues
-    for (var epicID in state.epics) {
-      var epic = state.epics[epicID]
+    state.issuesArray.filter(function (issue) { return (issue.issuetype === 'Epic') }).map(function (epic) {
       epic.storiesFN().map(function (story) {
         var tasksInThisStory = story.tasksFN()
         for (var taskID in tasksInThisStory) {
@@ -502,7 +494,8 @@ const getters = {
             returnValue.push({
               Epic: { key: epic.key, name: epic.name },
               Story: { key: story.key, summary: story.summary },
-              Task: task
+              Task: task,
+              rank: task.rank
             })
           }
         }
@@ -517,11 +510,13 @@ const getters = {
         returnValue.push({
           Epic: { key: epic.key, name: epic.name },
           Story: { key: 'BUG', summary: 'None (Bug)' },
-          Task: bug
+          Task: bug,
+          rank: bug.rank
         })
       }
-    }
-    return returnValue
+    })
+
+    return returnValue.sort(rankSort)
   }
 }
 
