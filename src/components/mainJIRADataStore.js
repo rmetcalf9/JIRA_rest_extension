@@ -480,7 +480,7 @@ const getters = {
   issuesArray: (state, getters) => {
     return state.issuesArray
   },
-  epics: (state, getters) => {
+  epicsOLD: (state, getters) => {
     return state.epics
   },
   exceptions: (state, getters) => {

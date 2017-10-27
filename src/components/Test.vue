@@ -26,14 +26,14 @@ export default {
       mainJIRADataStore.getters.issuesArray.map(function (issue) {
         if (issue.issuetype === 'Epic') {
           var thisEpicID = -1
-          for (var epicID in mainJIRADataStore.getters.epics) {
-            if (mainJIRADataStore.getters.epics[epicID].key === issue.key) thisEpicID = epicID
+          for (var epicID in mainJIRADataStore.getters.epicsOLD) {
+            if (mainJIRADataStore.getters.epicsOLD[epicID].key === issue.key) thisEpicID = epicID
           }
           if (thisEpicID === -1) {
             // console.log('Invalid epic id')
           }
           else {
-            var thisEpic = mainJIRADataStore.getters.epics[thisEpicID]
+            var thisEpic = mainJIRADataStore.getters.epicsOLD[thisEpicID]
             var a = thisEpic.summedStoryPoints
             var b = issue.postLoadCaculated.summedStoryPoints
             console.log(a)
@@ -41,26 +41,6 @@ export default {
             if (a !== b) console.log(issue.key + ':' + a + ':' + b)
           }
         }
-
-        /* if (issue.issuetype === 'Story') {
-          var thisEpicID = -1
-          for (var epicID in mainJIRADataStore.getters.epics) {
-            if (mainJIRADataStore.getters.epics[epicID].key === issue.epickey) thisEpicID = epicID
-          }
-          if (thisEpicID === -1) {
-            // console.log('Invalid epic id')
-          }
-          else {
-            var storyFromEpic = null
-            for (var storyID in mainJIRADataStore.getters.epics[thisEpicID].user_stories) {
-              if (mainJIRADataStore.getters.epics[thisEpicID].user_stories[storyID].key === issue.key) storyFromEpic = mainJIRADataStore.getters.epics[thisEpicID].user_stories[storyID]
-            }
-            var a = storyFromEpic.completed
-            var b = issue.postLoadCaculated.completed
-            if (a !== b) console.log(issue.key + ':' + a + ':' + b)
-          }
-        }
-        */
       })
       return mainJIRADataStore.state.tmp
     },

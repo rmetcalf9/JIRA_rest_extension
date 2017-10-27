@@ -102,14 +102,11 @@ export default {
     issueURLGenerator () {
       return JIRAServiceCallStore.getters.getIssueURLGenerator
     },
-    epic_data () {
-      return mainJIRADataStore.state.tmp
-    },
     loading_state_txt () {
       return mainJIRADataStore.getters.status_txt
     },
     epics () {
-      return mainJIRADataStore.getters.epics
+      return mainJIRADataStore.getters.epicsOLD
     },
     exceptions () {
       return mainJIRADataStore.getters.exceptions
