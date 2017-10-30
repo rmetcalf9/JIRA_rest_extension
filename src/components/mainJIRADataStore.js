@@ -4,10 +4,6 @@ import Vuex from 'vuex'
 import JIRAServiceCallStore from './JIRAServiceCallStore'
 import jqlArgumentUtils from './jqlArgumentUtils'
 
-// TODO 
-// changed detialed progress sprint view to use epic function
-// remove epics from load chain
-
 // Main state for this store
 const state = {
   state: 0, // 0 = CREATED, 1 = LOADING, 2 = LOADED, 3 = ERROR
@@ -55,25 +51,7 @@ const mutations = {
     state.issuesArray = Object.keys(state.issues).map(function (key) { return state.issues[key] })
     // state.issuesArray.filter(function (issue) { return (issue.issuetype === 'Epic') }).map(function (issue) { console.log(issue.name) })
 
-    state.exceptions = params.forGlobalState.exceptions // This line needs to remain
-
-    // ** TMP code needed for old data structure
-    // put epics into sprints
-    for (var sprintID2 in params.forGlobalState.sprints) {
-      var sprint = params.forGlobalState.sprints[sprintID2]
-
-      var epicsInThisSprint = sprint.getEpicsFN()
-
-      for (var epicID2 in epicsInThisSprint) {
-        // need to give OLD version of the epic
-        var epic2 = params.forGlobalState.epics[epicsInThisSprint[epicID2].key]
-        params.forGlobalState.sprints[sprintID2].epics.push(epic2)
-        params.forGlobalState.sprints[sprintID2].epicsKeys[epic2.key] = epic2.key
-      }
-      // console.log(sprint)
-      // console.log(epicsInThisSprint)
-    }
-    // **TMP CODE END
+    state.exceptions = params.forGlobalState.exceptions
 
     // Add the postloadcaculated elements
     //  process these in the order Task -> Story -> Bug -> Epic
@@ -126,10 +104,6 @@ const mutations = {
     raiseStoryExecptions(params.forGlobalState)
 
     state.project.sprints = params.forGlobalState.sprints
-    // Sort epics in each sprint by JIRA rank TODO Remove this and change to function
-    for (var sprintID in state.project.sprints) {
-      state.project.sprints[sprintID].epics = state.project.sprints[sprintID].epics.sort(rankSort)
-    }
   },
   SAVE_JIRADATA (state, params) {
     state.srcJiraData = params.srcJiraData
@@ -627,8 +601,7 @@ function loadIssues (commit, forGlobalState, callbackIn) {
           thisIssue.storiesFN = caculateStoriesInEpic(thisIssue, forGlobalState.state)
           forGlobalState.issues[thisIssue.key] = thisIssue
         }
-        loadEpics(commit, forGlobalState, callbackIn) // TODO Delete once sprints are fixed
-        // loadingChainFinalSteps({commit: commit, callback: callbackIn, forGlobalState: forGlobalState})
+        loadingChainFinalSteps({commit: commit, callback: callbackIn, forGlobalState: forGlobalState})
       },
       params: {}
     },
@@ -639,44 +612,6 @@ function loadIssues (commit, forGlobalState, callbackIn) {
   }
   JIRAServiceCallStore.dispatch('query', {
     jql: jqlArgumentUtils.getIssueRetervialJQL(state.srcJiraData.epicProjects, ['Epic', 'Story', 'Task', 'Bug']),
-    callback: callback
-  })
-}
-
-function loadEpics (commit, forGlobalState, callbackIn) {
-  var callback = {
-    OKcallback: {
-      method: function (issues, passback) {
-        // console.log('Epic query sesponses')
-        // console.log(issues)
-        for (var i = 0; i < issues.length; i++) {
-          forGlobalState.epics[issues[i].key] = {
-            id: issues[i].id,
-            key: issues[i].key,
-            name: issues[i].fields.customfield_10801,
-            description: issues[i].fields.description,
-            user_stories: [],
-            summedStoryPoints: 0,
-            summedBurnedStoryPoints: 0,
-            rank: issues[i].fields.customfield_11000,
-            bugs: {},
-            issuetype: 'Epic'
-          }
-          forGlobalState.epics[issues[i].key].storiesFN = caculateStoriesInEpic(forGlobalState.epics[issues[i].key], forGlobalState.state)
-        }
-        // We have now collected all the epics
-        // now query user stories
-        loadingChainFinalSteps({commit: passback.commit, callback: passback.callback, forGlobalState: forGlobalState})
-      },
-      params: {state: state, commit: commit, callback: callbackIn}
-    },
-    FAILcallback: {
-      method: loadDataErrorFn,
-      params: {commit: commit, callback: callbackIn}
-    }
-  }
-  JIRAServiceCallStore.dispatch('query', {
-    jql: jqlArgumentUtils.getIssueRetervialJQL(state.srcJiraData.epicProjects, ['Epic']),
     callback: callback
   })
 }
@@ -758,9 +693,7 @@ function getSprintDataFromJIRAString (jiraString, forGlobalState) {
     start: new Date(gv('startDate')),
     end: new Date(gv('endDate')),
     complete: gv('completeDate'),
-    sequence: gv('sequence'),
-    epics: [], // TODO Remove
-    epicsKeys: {} // TODO Remove
+    sequence: gv('sequence')
   }
   ret.getEpicsFN = caculateEpicsInSprint(ret.id, forGlobalState.state)
   ret.hasTasksFN = caculateSprintHasSubType(ret, forGlobalState.state, 'Task')

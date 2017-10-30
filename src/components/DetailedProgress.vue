@@ -84,7 +84,7 @@ export default {
       if (typeof (x) === 'undefined') {
         return mainJIRADataStore.getters.epics
       }
-      return x.epics
+      return x.getEpicsFN()
     },
     project () {
       return mainJIRADataStore.getters.project
