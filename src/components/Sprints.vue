@@ -16,7 +16,7 @@
 				</tr>
 			</thead>
 			<tbody>
-				<tr v-for="sprint in project.sprints" v-if="(sprint.hasStories === typ.hasStories) && (sprint.hasTasks === typ.hasTasks)">
+				<tr v-for="sprint in project.sprints" v-if="(sprint.hasStoriesFN() === typ.hasStories) && (sprint.hasTasksFN() === typ.hasTasks)">
 					<router-link
 						tag="div"
 						:key="sprint.id"

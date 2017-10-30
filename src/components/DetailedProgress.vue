@@ -115,30 +115,26 @@ export default {
       }
 
       // If x is defined we need to caculate epic percentages for this particular sprint
-      var totalPointsSprint = 0
-      var burnedPointsSprint = 0
-      for (var curEpicID in x.epics) {
-        var curEpic = x.epics[curEpicID]
-        var totalPointsEpic = 0
-        var burnedPointsEpic = 0
-        var userStoriesInCurEpic = curEpic.storiesFN()
-        var tt = this
-        userStoriesInCurEpic.map(function (story) {
-          if (story.sprintid === parseInt(tt.$route.params.sprintID)) {
-            totalPointsEpic += story.postLoadCaculated.summedStoryPoints
-            burnedPointsEpic += story.postLoadCaculated.summedBurnedStoryPoints
+      // We might consider moving this logic to a postLoadCaculated array inside the sprint
+      var tt = this
+      var totalsForSprint = x.getEpicsFN().reduce(function (sum, epic) {
+        var totalsForEpic = epic.storiesFN().filter(
+          function (story) { return story.sprintid === parseInt(tt.$route.params.sprintID) }
+        ).reduce(function (sum, story) {
+          return {
+            totalPoints: sum.totalPoints + story.postLoadCaculated.summedStoryPoints,
+            burnedPoints: sum.burnedPoints + story.postLoadCaculated.summedBurnedStoryPoints
           }
-        })
-        var epicPercentage2 = 0
-        if ((totalPointsEpic) !== 0) epicPercentage2 = (Math.round(100 * burnedPointsEpic / totalPointsEpic))
-        ret.epicPercentage[curEpic.key] = epicPercentage2
-        totalPointsSprint += totalPointsEpic
-        burnedPointsSprint += burnedPointsEpic
-      }
+        }, { totalPoints: 0, burnedPoints: 0 })
+        return {
+          totalPoints: sum.totalPoints + totalsForEpic.totalPoints,
+          burnedPoints: sum.burnedPoints + totalsForEpic.burnedPoints
+        }
+      }, { totalPoints: 0, burnedPoints: 0 })
       ret.progressPercantage = 0
-      if ((totalPointsSprint) !== 0) ret.progressPercantage = (Math.round(100 * burnedPointsSprint / totalPointsSprint))
-      ret.totalPoints = totalPointsSprint
-      ret.totalBurnedPoints = burnedPointsSprint
+      if ((totalsForSprint.totalPoints) !== 0) ret.progressPercantage = (Math.round(100 * totalsForSprint.burnedPoints / totalsForSprint.totalPoints))
+      ret.totalPoints = totalsForSprint.totalPoints
+      ret.totalBurnedPoints = totalsForSprint.burnedPoints
       return ret
     }
   }

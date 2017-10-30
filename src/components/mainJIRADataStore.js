@@ -4,7 +4,7 @@ import Vuex from 'vuex'
 import JIRAServiceCallStore from './JIRAServiceCallStore'
 import jqlArgumentUtils from './jqlArgumentUtils'
 
-// TODO Put epic function into sprints
+// TODO 
 // changed detialed progress sprint view to use epic function
 // remove epics from load chain
 
@@ -383,13 +383,13 @@ function raiseBugExecptions (forGlobalState) {
 function raiseSprintExecptions (forGlobalState) {
   Object.keys(forGlobalState.sprints).map(function (objectKey, index) {
     var x = forGlobalState.sprints[objectKey]
-    if (x.hasTasks) {
-      if (x.hasStories) {
+    if (x.hasTasksFN()) {
+      if (x.hasStoriesFN()) {
         forGlobalState.exceptions = addException(forGlobalState.exceptions, 'Sprint ' + x.id, 'Sprint has both tasks and stories')
       }
     }
-    if (!x.hasTasks) {
-      if (!x.hasStories) {
+    else {
+      if (!x.hasStoriesFN()) {
         forGlobalState.exceptions = addException(forGlobalState.exceptions, 'Sprint ' + x.id, 'Sprint has neither tasks nor stories')
       }
     }
@@ -717,6 +717,14 @@ function caculateEpicsInSprint (sprintID, state) {
     return epicArray
   }
 }
+function caculateSprintHasSubType (sprint, state, subtype) {
+  return function () {
+    return (state.issuesArray.filter(function (curIssue) {
+      if (curIssue.issuetype !== subtype) return false
+      return (sprint.id === curIssue.sprintid)
+    }).length !== 0)
+  }
+}
 
 function getSprintDataFromJIRAString (jiraString, forGlobalState) {
   // Return the JSON for this sprint or null
@@ -751,12 +759,12 @@ function getSprintDataFromJIRAString (jiraString, forGlobalState) {
     end: new Date(gv('endDate')),
     complete: gv('completeDate'),
     sequence: gv('sequence'),
-    hasTasks: false,
-    hasStories: false,
     epics: [], // TODO Remove
     epicsKeys: {} // TODO Remove
   }
   ret.getEpicsFN = caculateEpicsInSprint(ret.id, forGlobalState.state)
+  ret.hasTasksFN = caculateSprintHasSubType(ret, forGlobalState.state, 'Task')
+  ret.hasStoriesFN = caculateSprintHasSubType(ret, forGlobalState.state, 'Story')
 
   return ret
 }
@@ -780,13 +788,6 @@ function getSprintID (sprintField, issueKey, forGlobalState, sourceIssueType, ep
     }
   }
   if (sprintInfo === null) return null
-
-  if (sourceIssueType === 'Task') {
-    forGlobalState.sprints[sprintInfo.id].hasTasks = true
-  }
-  else if (sourceIssueType === 'Story') {
-    forGlobalState.sprints[sprintInfo.id].hasStories = true
-  }
 
   return sprintInfo.id
 }
