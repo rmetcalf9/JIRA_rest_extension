@@ -61,7 +61,8 @@ export default new VueRouter({
         { path: 'progress', component: load('Progress'), beforeEnter (to, from, next) { defaultBeforeNavFn(to, from, next, 'Progress') } },
         { path: 'test', component: load('Test'), beforeEnter (to, from, next) { defaultBeforeNavFn(to, from, next, 'Temp Test Page') } },
         { path: 'issues', component: load('Issues'), beforeEnter (to, from, next) { defaultBeforeNavFn(to, from, next, 'All Issues') } },
-        { path: '/changeproject', component: load('ChangeProject'), beforeEnter (to, from, next) { defaultBeforeNavFn(to, from, next, 'Change Project') } }
+        { path: '/changeproject', component: load('ChangeProject'), beforeEnter (to, from, next) { defaultBeforeNavFn(to, from, next, 'Change Project') } },
+        { path: 'confluencetestcall', component: load('ConfluenceTestCall'), beforeEnter (to, from, next) { defaultBeforeNavFn(to, from, next, 'Confluence Test Call Utility') } }
       ]
     },
     { path: '/login', component: load('Login'), beforeEnter (to, from, next) { defaultBeforeNavFn(to, from, next, 'Login') } },

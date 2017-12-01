@@ -54,6 +54,10 @@
         <q-item-side icon="group_work" />
         <q-item-main label="TEST2" />
       </q-side-link>
+      <q-side-link item to="/confluencetestcall">
+        <q-item-side icon="group_work" />
+        <q-item-main label="Conf Util" />
+      </q-side-link>
       <hr>
       <q-side-link item to="/changeproject">
         <q-item-side icon="find_replace" />

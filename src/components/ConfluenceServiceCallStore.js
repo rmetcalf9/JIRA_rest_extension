@@ -214,6 +214,7 @@ function callPostServiceINTERNAL (state, URLPath, data, callback, authkey, metho
     headers: {
       'Content-Type': 'application/json',
       'Authorization': authkey
+      // 'Origin': 'https://wiki.imperial.ac.uk' chrome won't set unsafe header
     }
   }
   // console.log('Making confluence call:')
