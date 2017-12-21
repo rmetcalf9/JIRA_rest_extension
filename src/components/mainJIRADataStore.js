@@ -6,6 +6,10 @@ import jqlArgumentUtils from './jqlArgumentUtils'
 
 var defaultProject = 'SSJ'
 
+var exceptionRuleOptions = {
+  storiesMustHaveEstimate: true
+}
+
 // Main state for this store
 const state = {
   state: 0, // 0 = CREATED, 1 = LOADING, 2 = LOADED, 3 = ERROR
@@ -236,6 +240,11 @@ function raiseStoryExecptions (forGlobalState) {
   state.issuesArray.filter(function (curIssue) {
     return (curIssue.issuetype === 'Story')
   }).map(function (issue) {
+    if (exceptionRuleOptions.storiesMustHaveEstimate) {
+      if (issue.story_points === null) {
+        forGlobalState.exceptions = addException(forGlobalState.exceptions, issue.key, 'Story without estimate')
+      }
+    }
     var hasNotEstimatedTasks = false
     issue.tasksFN().map(function (task) {
       if (task.story_points === null) hasNotEstimatedTasks = true
