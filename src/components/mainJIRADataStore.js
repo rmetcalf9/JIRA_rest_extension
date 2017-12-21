@@ -8,7 +8,8 @@ var defaultProject = 'SSJ'
 
 var exceptionRuleOptions = {
   storiesMustHaveEstimate: true,
-  storyBurnedCaculationBasis: 'LOGGED WORK' // 'TASKS DONE', 'LOGGED WORK'
+  storyBurnedCaculationBasis: 'LOGGED WORK', // 'TASKS DONE', 'LOGGED WORK'
+  reportAllNotDoneTasksAreBlockages: true
 }
 
 // Main state for this store
@@ -449,7 +450,14 @@ const getters = {
         var tasksInThisStory = story.tasksFN()
         for (var taskID in tasksInThisStory) {
           var task = tasksInThisStory[taskID]
-          if (task.status === 'On Hold') {
+          var taskIsBlockage = false
+          if (exceptionRuleOptions.reportAllNotDoneTasksAreBlockages) {
+            taskIsBlockage = task.status !== 'Done'
+          }
+          else {
+            taskIsBlockage = task.status === 'On Hold'
+          }
+          if (taskIsBlockage) {
             returnValue.push({
               Epic: { key: epic.key, name: epic.name },
               Story: { key: story.key, summary: story.summary },
