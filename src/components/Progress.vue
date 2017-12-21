@@ -118,7 +118,7 @@ export default {
       return mainJIRADataStore.getters.blockages
     },
     confluencePageContentTitle () {
-      if (mainJIRADataStore.getters.srcJiraData.epicProjects[0] === 'SPI') {
+      if (mainJIRADataStore.getters.srcJiraData.epicProjects[0] === 'SSJ') {
         return 'SIMP+Integrations+diary'
       }
       if (mainJIRADataStore.getters.srcJiraData.epicProjects[0] === 'PRJ102') {
