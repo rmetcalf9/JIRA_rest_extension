@@ -287,7 +287,9 @@ function raiseStoryExecptions (forGlobalState) {
     })
     if (issue.sprintid !== null) {
       if (hasNotEstimatedTasks) {
-        forGlobalState.exceptions = addException(forGlobalState.exceptions, issue.key, 'Story in Sprint with some but not all Tasks estimated')
+        if (exceptionRuleOptions.storyBurnedCaculationBasis === 'TASKS DONE') {
+          forGlobalState.exceptions = addException(forGlobalState.exceptions, issue.key, 'Story in Sprint with some but not all Tasks estimated')
+        }
       }
 
       // Add an exception for this userstory if it is in a sprint and it's story points don't match summed story points
