@@ -58,6 +58,10 @@
         <q-item-side icon="group_work" />
         <q-item-main label="Conf Util" />
       </q-side-link>
+      <q-side-link item to="/microsoftprojectutil">
+        <q-item-side icon="group_work" />
+        <q-item-main label="Project Util" />
+      </q-side-link>
       <hr>
       <q-side-link item to="/changeproject">
         <q-item-side icon="find_replace" />
