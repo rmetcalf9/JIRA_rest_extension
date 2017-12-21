@@ -4,6 +4,8 @@ import Vuex from 'vuex'
 import JIRAServiceCallStore from './JIRAServiceCallStore'
 import jqlArgumentUtils from './jqlArgumentUtils'
 
+var defaultProject = 'SSJ'
+
 // Main state for this store
 const state = {
   state: 0, // 0 = CREATED, 1 = LOADING, 2 = LOADED, 3 = ERROR
@@ -22,9 +24,9 @@ const state = {
     bugsResolved: 0
   },
   srcJiraData: {
-    epicProjects: ['SPI'],
-    storyProjects: ['SPI'],
-    taskProjects: ['SPI']
+    epicProjects: [defaultProject],
+    storyProjects: [defaultProject],
+    taskProjects: [defaultProject]
   }
 }
 
