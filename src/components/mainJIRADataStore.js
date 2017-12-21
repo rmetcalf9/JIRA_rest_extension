@@ -147,7 +147,7 @@ function caculateIssuePostLoadValues (forGlobalState, issue) {
         if (issue.story_points !== null) {
           var secondsTotal = (issue.story_points * (8 * 60 * 60))
           if (secondsTotal > 0) {
-            if (secondsTotal < issue.timespent) {
+            if (secondsTotal <= issue.timespent) {
               summedBurnedStoryPoints = (summedStoryPoints - 1)
               // mode worked time than total but not done - put to 99%
               progress = '99%'
