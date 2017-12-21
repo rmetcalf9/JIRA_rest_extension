@@ -69,6 +69,7 @@ export default {
   },
   computed: {
     area () {
+      csv = []
       var epics = mainJIRADataStore.getters.epics
       epics.map(function (epic) {
         csv.push(epic)

@@ -5,7 +5,9 @@
 	<br>
     <q-card v-for="(epic2, key) in epics" :key="epic2.key">
 	  <q-card-title class="card-title bg-primary text-white">
-	  {{ totals.epicPercentage[epic2.key] }}% -  {{ epic2.name }}
+	  {{ totals.epicPercentage[epic2.key] }}% -  {{ epic2.name }} 
+	  <!-- Debug -->
+	  {{ epic2.postLoadCaculated.summedStoryPoints }} / {{ epic2.postLoadCaculated.summedBurnedStoryPoints }}
 	  </q-card-title>
 	  <q-list>
 	    <q-item v-for="userStory in epic2.storiesFN()" :key="userStory.key" v-if="(typeof(sprint) === 'undefined') || (sprintid === userStory.sprintid)">

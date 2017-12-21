@@ -7,7 +7,8 @@ import jqlArgumentUtils from './jqlArgumentUtils'
 var defaultProject = 'SSJ'
 
 var exceptionRuleOptions = {
-  storiesMustHaveEstimate: true
+  storiesMustHaveEstimate: true,
+  storyBurnedCaculationBasis: 'LOGGED WORK' // 'TASKS DONE', 'LOGGED WORK'
 }
 
 // Main state for this store
@@ -57,8 +58,6 @@ const mutations = {
     state.issuesArray = Object.keys(state.issues).map(function (key) { return state.issues[key] })
     // state.issuesArray.filter(function (issue) { return (issue.issuetype === 'Epic') }).map(function (issue) { console.log(issue.name) })
 
-    state.exceptions = params.forGlobalState.exceptions
-
     // Add the postloadcaculated elements
     //  process these in the order Task -> Story -> Bug -> Epic
     state.issuesArray.sort(
@@ -72,10 +71,12 @@ const mutations = {
     ).map(
       function (issue) {
         // console.log('Caculating ' + issue.issuetype)
-        issue.postLoadCaculated = caculateIssuePostLoadValues(issue)
+        issue.postLoadCaculated = caculateIssuePostLoadValues(params.forGlobalState, issue)
         return issue
       }
     )
+
+    state.exceptions = params.forGlobalState.exceptions
 
     state.project = {
       // sprints added later
@@ -126,53 +127,87 @@ function getPostLoadCaclProcessOrder (issue) {
 }
 
 // called in the order order Task -> Story -> Bug -> Epic
-function caculateIssuePostLoadValues (issue) {
+function caculateIssuePostLoadValues (forGlobalState, issue) {
   if (issue.issuetype === 'Story') {
     var summedStoryPoints = 0
     var summedBurnedStoryPoints = 0
-    var summedTaskStoryPoints = 0
-    var summedTaskBurnedStoryPoints = 0
+    var progress = issue.story_points
 
-    var tasksInThisStory = issue.tasksFN()
-    for (var taskID in tasksInThisStory) {
-      var task = tasksInThisStory[taskID]
-      if (summedTaskStoryPoints !== null) {
-        if (task.story_points === null) {
-          summedTaskStoryPoints = null
-        }
-        else {
-          if (task.status === 'Done') summedTaskBurnedStoryPoints += task.story_points
-          summedTaskStoryPoints += task.story_points
+    if (exceptionRuleOptions.storyBurnedCaculationBasis === 'LOGGED WORK') {
+      summedStoryPoints = issue.story_points
+      summedBurnedStoryPoints = 0 // TODO
+      progress = issue.story_points
+      if (progress === null) progress = 0
+      if (issue.status === 'Done') {
+        summedBurnedStoryPoints = summedStoryPoints
+        progress = '100%'
+      }
+      else {
+        if (issue.story_points !== null) {
+          var secondsTotal = (issue.story_points * (8 * 60 * 60))
+          if (secondsTotal > 0) {
+            if (secondsTotal < issue.timespent) {
+              summedBurnedStoryPoints = (summedStoryPoints - 1)
+              // mode worked time than total but not done - put to 99%
+              progress = '99%'
+            }
+            else {
+              summedBurnedStoryPoints = (issue.timespent / (8 * 60 * 60))
+              progress = (issue.timespent / (8 * 60 * 60)) + '/' + issue.story_points + ' '
+              progress += Math.round((issue.timespent * 100) / secondsTotal)
+              progress += '%'
+            }
+          }
         }
       }
     }
+    else if (exceptionRuleOptions.storyBurnedCaculationBasis === 'TASKS DONE') {
+      var summedTaskStoryPoints = 0
+      var summedTaskBurnedStoryPoints = 0
+      var tasksInThisStory = issue.tasksFN()
+      for (var taskID in tasksInThisStory) {
+        var task = tasksInThisStory[taskID]
+        if (summedTaskStoryPoints !== null) {
+          if (task.story_points === null) {
+            summedTaskStoryPoints = null
+          }
+          else {
+            if (task.status === 'Done') summedTaskBurnedStoryPoints += task.story_points
+            summedTaskStoryPoints += task.story_points
+          }
+        }
+      }
 
-    if (tasksInThisStory.length === 0) {
-      summedTaskStoryPoints = null
-      summedStoryPoints = issue.story_points
-      summedBurnedStoryPoints = 0
+      if (tasksInThisStory.length === 0) {
+        summedTaskStoryPoints = null
+        summedStoryPoints = issue.story_points
+        summedBurnedStoryPoints = 0
+      }
+      else {
+        // user story with tasks.
+        // we must use the summedTaskStoryPoints or issue.story_points which ever is greater
+        summedStoryPoints = summedTaskStoryPoints
+        if (issue.story_points > summedTaskStoryPoints) {
+          summedStoryPoints = issue.story_points
+        }
+        summedBurnedStoryPoints = summedTaskBurnedStoryPoints
+      }
+      progress = issue.story_points
+      if (progress === null) progress = 0
+      if (summedTaskStoryPoints !== null) {
+        if (summedTaskStoryPoints !== 0) {
+          progress = summedTaskBurnedStoryPoints + '/' + summedTaskStoryPoints + ' '
+          progress += Math.round((summedTaskBurnedStoryPoints * 100) / summedTaskStoryPoints)
+          progress += '%'
+        }
+      }
     }
     else {
-      // user story with tasks.
-      // we must use the summedTaskStoryPoints or issue.story_points which ever is greater
-      summedStoryPoints = summedTaskStoryPoints
-      if (issue.story_points > summedTaskStoryPoints) {
-        summedStoryPoints = issue.story_points
-      }
-      summedBurnedStoryPoints = summedTaskBurnedStoryPoints
+      forGlobalState.exceptions = addException(forGlobalState.exceptions, issue.key, 'Invalid caculation basis')
+      console.log('ERROR Invalid caculation basis')
     }
-
     var labelText = 'X'
     var completed = false
-    var progress = issue.story_points
-    if (progress === null) progress = 0
-    if (summedTaskStoryPoints !== null) {
-      if (summedTaskStoryPoints !== 0) {
-        progress = summedTaskBurnedStoryPoints + '/' + summedTaskStoryPoints + ' '
-        progress += Math.round((summedTaskBurnedStoryPoints * 100) / summedTaskStoryPoints)
-        progress += '%'
-      }
-    }
     // var progress = '0/0 100%'
     labelText = progress + ' - ' + issue.key + ' (' + issue.status + ') ' + issue.summary
     completed = (summedTaskBurnedStoryPoints === summedTaskStoryPoints)
@@ -591,7 +626,11 @@ function loadIssues (commit, forGlobalState, callbackIn) {
               userStoryKey = issues[i].fields.customfield_11101[j]
             }
           }
+          // if (issues[i].key === 'SSJ-50') console.log(issues[i])
           var epickey = issues[i].fields.customfield_10800
+          var timespent = issues[i].fields.timespent
+          if (timespent === null) timespent = 0
+          if (typeof (timespent) === 'undefined') timespent = 0
           var thisIssue = {
             issuetype: issues[i].fields.issuetype.name,
             id: issues[i].id,
@@ -605,7 +644,8 @@ function loadIssues (commit, forGlobalState, callbackIn) {
             story_points: issues[i].fields.customfield_10004,
             assignee: issues[i].fields.assignee,
             associatedStoryKey: undefIfUndef(userStoryKey),
-            sprintid: getSprintID(issues[i].fields.customfield_10501, issues[i].key, forGlobalState, issues[i].fields.issuetype.name, epickey)
+            sprintid: getSprintID(issues[i].fields.customfield_10501, issues[i].key, forGlobalState, issues[i].fields.issuetype.name, epickey),
+            timespent: timespent // 1 d seems to be 8 hours. The value here is in seconds 1 d = 28000 (8 * 60 * 60)
           }
           thisIssue.bugsFN = caculateBugsInIssue(thisIssue, forGlobalState.state)
           thisIssue.tasksFN = caculateTasksInStory(thisIssue, forGlobalState.state)
