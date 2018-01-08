@@ -32,10 +32,14 @@ function outputCSVLine (linenum, obj) {
     else {
       scheduledWork = obj.postLoadCaculated.summedStoryPoints + ' days' // Let project caculate sum
     }
-    // If task name starts with ICIS it is an ICIS task
+    // If task name starts with ICIS it is an ERP task
     resourceNames = 'SOA'
     if (name.substr(10, 4) === 'ICIS') {
-      resourceNames = 'ICIS'
+      resourceNames = 'ERP'
+    }
+    // If task name starts with OSS it is an ERP task
+    if (name.substr(10, 3) === 'OSS') {
+      resourceNames = 'ERP'
     }
   }
   else {
@@ -84,7 +88,7 @@ export default {
       csv = csv.map(function (curLine) { return {linenum: (n++), obj: curLine} })
 
       csv.map(function (curLine) { outputCSV += outputCSVLine(curLine.linenum, curLine.obj) })
-      console.log(getObjFormKey('SSJ-53'))
+      // console.log(getObjFormKey('SSJ-53'))
       return outputCSV
     }
   },
