@@ -1,6 +1,6 @@
 <template>
   <div><h3>Microsoft Project Utility</h3>
-  The following is a csv format project file. Copy it into a text file and import to project.
+  The following is a csv format project file. Copy it into a text file and import to project. Epics with an issue linked "is blocked by" to another epic are added as predessors.
   <br>
   <q-input v-model="area" type="textarea" />
   </div>
@@ -48,11 +48,23 @@ function outputCSVLine (linenum, obj) {
     scheduledWork = '' // Let project caculate sum
     resourceNames = ''
   }
+  var predecessors = ''
+  if (obj.issuetype === 'Epic') {
+    predecessors = obj.issuelinks.filter(function (o) {
+      if (typeof (o.inwardIssue) === 'undefined') return false
+      return (o.type.inward === 'is blocked by')
+    }).filter(function (o) {
+      return (getObjFormKey(o.inwardIssue.key)[0].obj.issuetype === 'Epic')
+    }).map(function (o) {
+      return getObjFormKey(o.inwardIssue.key)[0].linenum
+    })
+  }
+
   outputCSV += linenum
   outputCSV += ','
   outputCSV += name
   outputCSV += ','
-  outputCSV += '""' // Predecessors
+  outputCSV += '"' + predecessors + '"' // Predecessors
   outputCSV += ','
   outputCSV += scheduledWork
   outputCSV += ','
@@ -75,7 +87,11 @@ export default {
     area () {
       csv = []
       var epics = mainJIRADataStore.getters.epics
-      epics.map(function (epic) {
+      epics.sort(function (a, b) {
+        if (a.rank < b.rank) return -1
+        if (a.rank === b.rank) return 0
+        return 1
+      }).map(function (epic) {
         csv.push(epic)
         var stories = epic.storiesFN()
         stories.map(function (story) {
@@ -88,7 +104,6 @@ export default {
       csv = csv.map(function (curLine) { return {linenum: (n++), obj: curLine} })
 
       csv.map(function (curLine) { outputCSV += outputCSVLine(curLine.linenum, curLine.obj) })
-      // console.log(getObjFormKey('SSJ-53'))
       return outputCSV
     }
   },

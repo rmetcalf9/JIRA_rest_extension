@@ -629,7 +629,10 @@ function loadIssues (commit, forGlobalState, callbackIn) {
         //  Caculated sub-elements supplied as functions
         // console.log(issues)
         for (var i = 0; i < issues.length; i++) {
-          // console.log(issues[i])
+          // Useful code for displaying individual issue
+          // if (issues[i].key === 'SSJ-32') {
+          //   console.log(issues[i])
+          // }
           var userStoryKey = 'undefined'
           if (issues[i].fields.customfield_11101 !== null) {
             for (var j = 0; j < issues[i].fields.customfield_11101.length; j++) {
@@ -655,7 +658,8 @@ function loadIssues (commit, forGlobalState, callbackIn) {
             assignee: issues[i].fields.assignee,
             associatedStoryKey: undefIfUndef(userStoryKey),
             sprintid: getSprintID(issues[i].fields.customfield_10501, issues[i].key, forGlobalState, issues[i].fields.issuetype.name, epickey),
-            timespent: timespent // 1 d seems to be 8 hours. The value here is in seconds 1 d = 28000 (8 * 60 * 60)
+            timespent: timespent, // 1 d seems to be 8 hours. The value here is in seconds 1 d = 28000 (8 * 60 * 60)
+            issuelinks: issues[i].fields.issuelinks
           }
           thisIssue.bugsFN = caculateBugsInIssue(thisIssue, forGlobalState.state)
           thisIssue.tasksFN = caculateTasksInStory(thisIssue, forGlobalState.state)
