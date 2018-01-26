@@ -166,7 +166,7 @@ export default {
         newBodyString += '<tr>'
         newBodyString += '<td><span style="color: rgb(0,0,0);"><a href="' + issueURLGenerator(epic.key) + '" target="_new">' + epic.key + '</a> - ' + epic.name + '</span></td>'
         newBodyString += '<td style="text-align: right;">' + epic.storiesFN().length + '</td>'
-        newBodyString += '<td style="text-align: right;">' + epic.postLoadCaculated.summedBurnedStoryPoints + '/' + epic.postLoadCaculated.summedStoryPoints + '</td>'
+        newBodyString += '<td style="text-align: right;">' + epic.postLoadCaculated.summedBurnedStoryPoints.toFixed(this.storyPointDecimalPlaces) + '/' + epic.postLoadCaculated.summedStoryPoints.toFixed(this.storyPointDecimalPlaces) + '</td>'
         if (epic.postLoadCaculated.summedStoryPoints !== 0) {
           newBodyString += '<td style="text-align: right;">' + Math.round(100 * (epic.postLoadCaculated.summedBurnedStoryPoints / epic.postLoadCaculated.summedStoryPoints)) + '%</td>'
         }
@@ -182,7 +182,7 @@ export default {
       }
       newBodyString += '<tr><td>&nbsp;</td>'
       newBodyString += '<td style="text-align: right;"><strong>' + mainJIRADataStore.getters.project.numUserStories + '</strong></td>'
-      newBodyString += '<td style="text-align: right;"><strong>' + mainJIRADataStore.getters.project.numBurnedPoints + '/' + mainJIRADataStore.getters.project.numPoints + '</strong></td>'
+      newBodyString += '<td style="text-align: right;"><strong>' + mainJIRADataStore.getters.project.numBurnedPoints.toFixed(this.storyPointDecimalPlaces) + '/' + mainJIRADataStore.getters.project.numPoints.toFixed(this.storyPointDecimalPlaces) + '</strong></td>'
       newBodyString += '<td style="text-align: right;"><strong>' + mainJIRADataStore.getters.project.progressPercantage + '%</strong></td>'
 
       newBodyString += '<td style="text-align: right;"><strong>' + mainJIRADataStore.getters.project.bugsPending + '</strong></td>'
