@@ -18,7 +18,7 @@
 				<tr v-for="epic in epics">
 					<td data-th="Epic" class="text-left"><a v-bind:href="issueURLGenerator(epic.key)">{{ epic.key }}</a> - {{ epic.name }}</td>
 					<td data-th="Stories" class="text-right">{{ epic.storiesFN().length }}</td>
-					<td data-th="Points" class="text-right">{{ epic.postLoadCaculated.summedBurnedStoryPoints }}/{{ epic.postLoadCaculated.summedStoryPoints }}</td>
+					<td data-th="Points" class="text-right">{{ epic.postLoadCaculated.summedBurnedStoryPoints.toFixed(storyPointDecimalPlaces) }}/{{ epic.postLoadCaculated.summedStoryPoints.toFixed(storyPointDecimalPlaces) }}</td>
 					<td data-th="Progress" class="text-right" v-if="epic.postLoadCaculated.summedStoryPoints !== 0">{{ Math.round(100 * (epic.postLoadCaculated.summedBurnedStoryPoints / epic.postLoadCaculated.summedStoryPoints)) }}%</td>
 					<td data-th="Progress" class="text-right" v-if="epic.postLoadCaculated.summedStoryPoints == 0">0%</td>
 					<td data-th="Bugs Pending" class="text-right">{{ epic.postLoadCaculated.bugs.Pending }}</td>
@@ -31,7 +31,7 @@
 				<tr>
 					<td/>
 					<td class="text-right">{{ project.numUserStories }}</td>
-					<td class="text-right">{{ project.numBurnedPoints }}/{{ project.numPoints }}</td>
+					<td class="text-right">{{ project.numBurnedPoints.toFixed(storyPointDecimalPlaces) }}/{{ project.numPoints.toFixed(storyPointDecimalPlaces) }}</td>
 					<td class="text-right">{{ project.progressPercantage }}%</td>
 					<td class="text-right">{{ project.bugsPending }}</td>
 					<td class="text-right">{{ project.bugsInProgress }}</td>
@@ -93,6 +93,7 @@ export default {
   },
   data () {
     return {
+      storyPointDecimalPlaces: 0
     }
   },
   computed: {

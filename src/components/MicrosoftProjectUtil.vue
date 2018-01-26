@@ -42,6 +42,12 @@ function outputCSVLine (linenum, obj) {
       resourceNames = 'ERP'
     }
   }
+  else if (obj.issuetype === 'misc') {
+    name = obj.name
+    outlineLevel = obj.outlineLevel
+    scheduledWork = obj.scheduledWork
+    resourceNames = obj.resourceNames
+  }
   else {
     name = obj.name
     outlineLevel = 1
@@ -93,6 +99,22 @@ export default {
         return 1
       }).map(function (epic) {
         csv.push(epic)
+        csv.push({
+          issuetype: 'misc',
+          name: 'Sign off Functional Spec',
+          resourceNames: 'Analysts',
+          outlineLevel: 2,
+          scheduledWork: 1
+        })
+        if (epic.name.toUpperCase().endsWith('EDF')) {
+          csv.push({
+            issuetype: 'misc',
+            name: 'Banner APIs ready',
+            resourceNames: 'Ellucian',
+            outlineLevel: 2,
+            scheduledWork: 1
+          })
+        }
         var stories = epic.storiesFN()
         stories.map(function (story) {
           csv.push(story)
